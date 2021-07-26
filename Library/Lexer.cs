@@ -6,11 +6,11 @@ using System.Linq;
 
 namespace Lexical
 {
-    class Lexer<T> where T : Enum
+    public class Lexer<T> where T : Enum
     {
-        private IEnumerable<TokenDefinition<T>> Tokens;
+        private IEnumerable<LexerToken<T>> Tokens;
 
-        public Lexer(TokenDefinitions<T> tokens)
+        public Lexer(LexerDefinition<T> tokens)
         {
             Tokens = tokens.MapTokenDefinitionEnumerable();
         }
@@ -24,9 +24,7 @@ namespace Lexical
             while (textRemaining.Length > 0)
             {
                 var match = Tokens
-                    .Select((t, idx) => new { Definition = t, MatchLength = t.MatchLength(textRemaining), Idx = idx })
-                    .OrderByDescending(t => t.MatchLength)
-                    .ThenBy(t => t.Idx)
+                    .Select((t, idx) => new { Definition = t, MatchLength = t.MatchLength(textRemaining) })
                     .FirstOrDefault(t => t.MatchLength > 0);
 
                 if (match == null)

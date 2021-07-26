@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Lexical
 {
-    class LexerNode<T> : TokenDefinition<T> where T : Enum
+    public class LexerNode<T> : LexerToken<T> where T : Enum
     {
         public string Substring { get; set; }
 
@@ -15,7 +15,7 @@ namespace Lexical
         }
     }
 
-    class LexerProcessExpressionResult<T> where T : Enum
+    public class LexerProcessExpressionResult<T> where T : Enum
     {
 
         public string Text { get; }
