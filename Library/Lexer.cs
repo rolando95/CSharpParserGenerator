@@ -4,32 +4,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Lexical
+namespace CSharpParserGenerator
 {
-    public class Lexer<T> where T : Enum
+    public class Lexer<ELang> where ELang : Enum
     {
-        private IEnumerable<LexerToken<T>> Tokens;
+        private IEnumerable<LexerToken<ELang>> Tokens;
+        private ELang IgnoreToken;
 
-        public Lexer(LexerDefinition<T> tokens)
+        public Lexer(LexerDefinition<ELang> tokens, ELang ignoreToken = default)
         {
             Tokens = tokens.MapTokenDefinitionEnumerable();
+            IgnoreToken = ignoreToken;
         }
 
-        public LexerProcessExpressionResult<T> ProcessExpression(string text, T ignoreToken = default)
+        public LexerProcessExpressionResult<ELang> ProcessExpression(string text)
         {
             int position = 0;
             string textRemaining = text ?? "";
-            var nodes = new List<LexerNode<T>>();
+            var nodes = new List<LexerNode<ELang>>();
 
             while (textRemaining.Length > 0)
             {
+                var oldPosition = position;
+
                 var match = Tokens
                     .Select((t, idx) => new { Definition = t, MatchLength = t.MatchLength(textRemaining) })
                     .FirstOrDefault(t => t.MatchLength > 0);
 
                 if (match == null)
                 {
-                    return new LexerProcessExpressionResult<T>(text, false, errorMessage: $"Invalid expression at position {position}: {text}");
+                    return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: $"Invalid expression at position {position}: {text}");
                 }
 
                 var matchLength = match.MatchLength;
@@ -37,13 +41,12 @@ namespace Lexical
 
                 position += matchLength;
                 textRemaining = textRemaining[matchLength..];
+                if (match.Definition.Token.Equals(IgnoreToken)) continue;
 
-                if (ignoreToken.Equals(match.Definition.Token)) continue;
-
-                nodes.Add(new LexerNode<T>(substring, match.Definition.Token, match.Definition.Pattern));
+                nodes.Add(new LexerNode<ELang>(substring, oldPosition, match.Definition.Token, match.Definition.Pattern));
             }
 
-            return new LexerProcessExpressionResult<T>(text, true, nodes: nodes);
+            return new LexerProcessExpressionResult<ELang>(text, true, nodes: nodes);
         }
     }
 }

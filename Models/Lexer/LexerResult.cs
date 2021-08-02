@@ -1,32 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 
-namespace Lexical
+namespace CSharpParserGenerator
 {
-    public class LexerNode<T> : LexerToken<T> where T : Enum
+    [DebuggerDisplay("{StringToken}")]
+    public class LexerNode<ELang> : LexerToken<ELang> where ELang : Enum
     {
         public string Substring { get; set; }
+        public int Position { get; set; }
 
-        public LexerNode(string substring, T token, Regex pattern) : base(token, pattern)
+        public LexerNode(string substring, int position, Token<ELang> token, Regex pattern) : base(token, pattern)
         {
             Substring = substring;
+            Position = position;
         }
+
+        // Only to display in the debbuger
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public string StringToken => $"({Token.Symbol}) {Substring}";
     }
 
-    public class LexerProcessExpressionResult<T> where T : Enum
+    public class LexerProcessExpressionResult<ELang> where ELang : Enum
     {
 
         public string Text { get; }
         public bool Success { get; }
-        public IEnumerable<LexerNode<T>> Nodes { get; }
+        public IEnumerable<LexerNode<ELang>> Nodes { get; }
         public string ErrorMessage { get; }
 
         public LexerProcessExpressionResult(
             string text,
             bool success,
-            IEnumerable<LexerNode<T>> nodes = null,
+            IEnumerable<LexerNode<ELang>> nodes = null,
             string errorMessage = null
         )
         {

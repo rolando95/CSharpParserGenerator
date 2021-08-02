@@ -2,44 +2,41 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Lexical;
 
-namespace Syntax
+namespace CSharpParserGenerator
 {
-    public class ParserGenerator<ERule>
-        where ERule : Enum
+    public class ParserGenerator<ELang>
+        where ELang : Enum
     {
-        private List<ProductionRule<ERule>> ProductionRules { get; set; }
-        private Lexer<ERule> Lexer { get; set; }
-        public ParserGenerator([NotNull] Lexer<ERule> lexer, [NotNull] SyntaxDefinition<ERule> definition)
+        private List<ProductionRule<ELang>> ProductionRules { get; set; }
+        private Lexer<ELang> Lexer { get; set; }
+
+        public ParserGenerator([NotNull] Lexer<ELang> lexer, [NotNull] SyntaxDefinition<ELang> definition)
         {
             Lexer = lexer;
             ProductionRules = definition.ProductionRules;
         }
 
-        public void CompileParser()
+        public Parser<ELang> CompileParser()
         {
-            var states = new List<State<ERule>>();
-            var rootRules = GetRecursiveRulesFromNonTerminal(ProductionRules.First().Head);
+            var states = new List<State<ELang>>();
+            var rootProductionRules = GetProductionRulesFromNonTerminal(ProductionRules.First().Head);
 
+            var follows = new Dictionary<Token<ELang>, List<Token<ELang>>>();
             var rules = ProductionRules.Select(r => r.Head).Distinct();
+            foreach (var rule in rules) follows.Add(rule, GetFollows(rule));
 
-            var first = new Dictionary<Token<ERule>, List<Token<ERule>>>();
-            var follows = new Dictionary<Token<ERule>, List<Token<ERule>>>();
-            foreach (var rule in rules)
-            {
-                first.Add(rule, GetFirsts(rule));
-                follows.Add(rule, GetFollows(rule));
-            }
-            var rootState = GetStatesTree(new State<ERule>(rootRules, true), states);
+            var rootState = GetStatesTree(new State<ELang>(rootProductionRules, true), states);
             var parserTable = GetParserTable(follows, rootState, rootState);
+
+            return new Parser<ELang>(Lexer, ProductionRules, states, rootState, parserTable);
         }
 
-        public List<Token<ERule>> GetFirsts(Token<ERule> nonTerminalToken, List<Token<ERule>> tokensAlreadyVisited = null)
+        public List<Token<ELang>> GetFirsts(Token<ELang> nonTerminalToken, List<Token<ELang>> tokensAlreadyVisited = null)
         {
-            tokensAlreadyVisited ??= new List<Token<ERule>>();
+            tokensAlreadyVisited ??= new List<Token<ELang>>();
 
-            var rules = GetRecursiveRulesFromNonTerminal(nonTerminalToken);
+            var rules = GetProductionRulesFromNonTerminal(nonTerminalToken);
 
             var firsts = rules
                 .Where(r => r.CurrentNode.IsTerminal)
@@ -66,11 +63,11 @@ namespace Syntax
             return firsts.Distinct().ToList();
         }
 
-        public List<Token<ERule>> GetFollows(Token<ERule> nonTerminalToken, List<Token<ERule>> tokensAlreadyVisited = null)
+        public List<Token<ELang>> GetFollows(Token<ELang> nonTerminalToken, List<Token<ELang>> tokensAlreadyVisited = null)
         {
-            tokensAlreadyVisited ??= new List<Token<ERule>>();
+            tokensAlreadyVisited ??= new List<Token<ELang>>();
 
-            var follows = new List<Token<ERule>>() { new Token<ERule>(type: ETokenTypes.End) };
+            var follows = new List<Token<ELang>>() { Token<ELang>.EndToken };
 
             foreach (var productionRule in ProductionRules)
             {
@@ -88,7 +85,7 @@ namespace Syntax
                 foreach (var nonTerminalIndex in nonTerminalIndexes)
                 {
                     // Is last
-                    if (nonTerminalIndex.idx == productionRule.Nodes.Count() - 2)
+                    if (nonTerminalIndex.idx == productionRule.Count)
                     {
                         if (nonTerminalIndex.Node.Equals(productionRule.Head)) continue;
                         follows.AddRange(GetFollows(productionRule.Head, tokensAlreadyVisited.Append(nonTerminalToken).ToList()));
@@ -124,10 +121,10 @@ namespace Syntax
             return follows.Distinct().ToList();
         }
 
-        private List<ProductionRule<ERule>> GetRecursiveRulesFromNonTerminal(Token<ERule> nonTerminalToken, List<Token<ERule>> tokensAlreadyVisited = null)
+        private List<ProductionRule<ELang>> GetProductionRulesFromNonTerminal(Token<ELang> nonTerminalToken, List<Token<ELang>> tokensAlreadyVisited = null)
         {
 
-            tokensAlreadyVisited ??= new List<Token<ERule>>();
+            tokensAlreadyVisited ??= new List<Token<ELang>>();
 
             var generatedRules = ProductionRules.Where(r => r.Head.Equals(nonTerminalToken)).ToList();
             tokensAlreadyVisited.Add(nonTerminalToken);
@@ -146,12 +143,12 @@ namespace Syntax
             foreach (var nonVisitedRule in nonVisitedRules)
             {
                 if (tokensAlreadyVisited.Contains(nonVisitedRule)) continue;
-                resultRules = resultRules.Concat(GetRecursiveRulesFromNonTerminal(nonVisitedRule, tokensAlreadyVisited));
+                resultRules = resultRules.Concat(GetProductionRulesFromNonTerminal(nonVisitedRule, tokensAlreadyVisited));
             }
             return resultRules.ToList();
         }
 
-        private State<ERule> GetStatesTree([NotNull] State<ERule> currentState, [NotNull] List<State<ERule>> states = null)
+        private State<ELang> GetStatesTree([NotNull] State<ELang> currentState, [NotNull] List<State<ELang>> states = null)
         {
             states.Add(currentState);
 
@@ -186,17 +183,17 @@ namespace Syntax
                     }
                 }
 
-                IEnumerable<ProductionRule<ERule>> restProductionRules = new List<ProductionRule<ERule>>();
+                IEnumerable<ProductionRule<ELang>> restProductionRules = new List<ProductionRule<ELang>>();
                 foreach (var nextProduction in nextProductions)
                 {
                     if (!nextProduction.CurrentNode.IsNonTerminal) continue;
                     restProductionRules = restProductionRules
                                             .Union(
-                                                GetRecursiveRulesFromNonTerminal(nextProduction.CurrentNode)
+                                                GetProductionRulesFromNonTerminal(nextProduction.CurrentNode)
                                             );
                 }
 
-                var nextState = new State<ERule>(nextProductions.Concat(restProductionRules).ToList());
+                var nextState = new State<ELang>(nextProductions.Concat(restProductionRules).ToList());
                 foreach (var productionRule in producctionRuleGroup)
                 {
                     if (!productionRule.IsEnd) productionRule.NextState = nextState;
@@ -206,14 +203,14 @@ namespace Syntax
             return currentState;
         }
 
-        private ParserTable<ERule> GetParserTable(
-            Dictionary<Token<ERule>, List<Token<ERule>>> follows,
-            State<ERule> rootState,
-            State<ERule> currentState,
-            ParserTable<ERule> parserTable = null
+        private ParserTable<ELang> GetParserTable(
+            Dictionary<Token<ELang>, List<Token<ELang>>> follows,
+            State<ELang> rootState,
+            State<ELang> currentState,
+            ParserTable<ELang> parserTable = null
         )
         {
-            parserTable ??= new ParserTable<ERule>();
+            parserTable ??= new ParserTable<ELang>();
 
             foreach (var producctionRule in currentState.ProductionRules)
             {
@@ -227,7 +224,7 @@ namespace Syntax
                 {
                     var rule = producctionRule.Head;
                     var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(producctionRule));
-                    var actionState = new ActionState<ERule>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx);
+                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx);
 
                     foreach (var token in follows[rule])
                     {
@@ -239,7 +236,7 @@ namespace Syntax
 
                 {
                     var actionType = productionNode.IsNonTerminal ? ActionType.Goto : ActionType.Shift;
-                    var actionState = new ActionState<ERule>(actionType, producctionRule.NextState.Id);
+                    var actionState = new ActionState<ELang>(actionType, producctionRule.NextState.Id);
                     parserTable[currentStateId, productionNode] = actionState;
                     GetParserTable(follows, rootState, producctionRule.NextState, parserTable);
                 }

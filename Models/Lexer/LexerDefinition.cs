@@ -7,23 +7,23 @@ using Utils.Serialization;
 
 using System.Linq;
 
-namespace Lexical
+namespace CSharpParserGenerator
 {
-    public class LexerToken<T> where T : Enum
+    public class LexerToken<ELang> where ELang : Enum
     {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public T Token { get; }
+        //[JsonConverter(typeof(JsonStringEnumConverter))]
+        public Token<ELang> Token { get; }
 
         [JsonConverter(typeof(RegexJsonSerializer))]
         public Regex Pattern { get; }
 
-        public LexerToken(T token, TokenRegex pattern)
+        public LexerToken(Token<ELang> token, TokenRegex pattern)
         {
             Token = token;
             Pattern = pattern;
         }
 
-        public LexerToken(T token, Regex pattern)
+        public LexerToken(Token<ELang> token, Regex pattern)
         {
             Token = token;
             Pattern = pattern;
@@ -46,12 +46,12 @@ namespace Lexical
 
     }
 
-    public class LexerDefinition<T> : Dictionary<T, TokenRegex> where T : Enum
+    public class LexerDefinition<ELang> : Dictionary<ELang, TokenRegex> where ELang : Enum
     {
-        public IEnumerable<LexerToken<T>> MapTokenDefinitionEnumerable()
+        public IEnumerable<LexerToken<ELang>> MapTokenDefinitionEnumerable()
         {
-            Dictionary<T, TokenRegex> dictionary = this;
-            return dictionary.AsEnumerable().Select(pair => new LexerToken<T>(pair.Key, pair.Value));
+            Dictionary<ELang, TokenRegex> dictionary = this;
+            return dictionary.AsEnumerable().Select(pair => new LexerToken<ELang>(new Token<ELang>(pair.Key, type: ETokenTypes.Terminal), pair.Value));
         }
     }
 }

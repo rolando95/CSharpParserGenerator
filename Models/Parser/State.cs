@@ -1,32 +1,30 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Utils.Extensions;
 using Utils.Sequence;
 
-namespace Syntax
+namespace CSharpParserGenerator
 {
     [DebuggerDisplay("State {Id}")]
-    public class State<ERule> : IEquatable<State<ERule>> where ERule : Enum
+    public class State<ELang> : IEquatable<State<ELang>> where ELang : Enum
     {
         private static Sequence Sequence { get; } = new Sequence();
         public int Id { get; } = Sequence.Next();
-        public List<ProductionRule<ERule>> ProductionRules { get; }
+        public List<ProductionRule<ELang>> ProductionRules { get; }
 
-        public State(List<ProductionRule<ERule>> productionRules, bool isRoot = false)
+        public State(List<ProductionRule<ELang>> productionRules, bool isRoot = false)
         {
             ProductionRules = productionRules;
             if (isRoot) Id = Sequence.Reset();
         }
 
-        public bool Equals(State<ERule> other) => Id.Equals(other.Id) || ProductionRules.SequenceEqual(other.ProductionRules);
-        public bool Equals(IEnumerable<ProductionRule<ERule>> other) => ProductionRules.SequenceEqual(other);
+        public bool Equals(State<ELang> other) => Id.Equals(other.Id) || ProductionRules.SequenceEqual(other.ProductionRules);
+        public bool Equals(IEnumerable<ProductionRule<ELang>> other) => ProductionRules.SequenceEqual(other);
 
         public override int GetHashCode() => new { ProductionRules }.GetHashCode();
-        public override bool Equals(object o) => Equals(o as State<ERule>);
-        public bool Contains(ProductionRule<ERule> productionRule) => ProductionRules.Contains(productionRule);
+        public override bool Equals(object o) => Equals(o as State<ELang>);
+        public bool Contains(ProductionRule<ELang> productionRule) => ProductionRules.Contains(productionRule);
 
     }
 }

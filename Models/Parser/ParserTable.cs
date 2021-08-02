@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
-namespace Syntax
+namespace CSharpParserGenerator
 {
     public enum ActionType { Shift, Reduce, Goto, Accept, ExecuteOp }
 
     [DebuggerDisplay("{Action} - State {To}")]
 
 
-    public class ActionState<ERule> where ERule : Enum
+    public class ActionState<ELang> where ELang : Enum
     {
         public ActionType Action { get; }
         public int To { get; }
@@ -23,27 +24,27 @@ namespace Syntax
         public ActionState(ActionType action, int to) { Action = action; To = to; }
     }
 
-    public class ParserTable<ERule> where ERule : Enum
+    public class ParserTable<ELang> where ELang : Enum
     {
 
-        private Dictionary<int, Dictionary<Token<ERule>, ActionState<ERule>>> Actions { get; set; }
+        private Dictionary<int, Dictionary<Token<ELang>, ActionState<ELang>>> Actions { get; set; }
 
-        public ParserTable() { Actions = new Dictionary<int, Dictionary<Token<ERule>, ActionState<ERule>>>(); }
+        public ParserTable() { Actions = new Dictionary<int, Dictionary<Token<ELang>, ActionState<ELang>>>(); }
 
-        public ActionState<ERule> this[int fromState, Token<ERule> tokenId]
+        public ActionState<ELang> this[int fromState, Token<ELang> tokenId]
         {
             get => GetAction(fromState, tokenId);
             set => SetAction(fromState, tokenId, value);
         }
 
-        public void SetAction(int fromState, Token<ERule> tokenId, ActionState<ERule> action)
+        public void SetAction(int fromState, Token<ELang> tokenId, ActionState<ELang> action)
         {
-            if (!Actions.ContainsKey(fromState)) Actions.Add(fromState, new Dictionary<Token<ERule>, ActionState<ERule>>());
+            if (!Actions.ContainsKey(fromState)) Actions.Add(fromState, new Dictionary<Token<ELang>, ActionState<ELang>>());
             if (!Actions[fromState].ContainsKey(tokenId)) { Actions[fromState].Add(tokenId, action); return; }
             Actions[fromState][tokenId] = action;
         }
 
-        public ActionState<ERule> GetAction(int fromState, Token<ERule> tokenId)
+        public ActionState<ELang> GetAction(int fromState, Token<ELang> tokenId)
         {
             if (!Actions.ContainsKey(fromState) || !Actions[fromState].ContainsKey(tokenId)) return null;
             return Actions[fromState][tokenId];

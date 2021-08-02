@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Syntax
+namespace CSharpParserGenerator
 {
     public class Op
     {
