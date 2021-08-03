@@ -63,7 +63,7 @@ namespace CSharpParserGenerator
                         throw new InvalidOperationException($"Syntax error: Invalid expression at position {nextNode.Position}. Received: {nextNode.Value}");
                     }
 
-                    switch (action?.Action)
+                    switch (action.Action)
                     {
                         case ActionType.Accept:
                             {
