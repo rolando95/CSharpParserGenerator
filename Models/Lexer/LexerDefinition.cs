@@ -39,7 +39,7 @@ namespace CSharpParserGenerator
     public class TokenRegex
     {
         public Regex Pattern { get; }
-        private TokenRegex(string pattern) { Pattern = new Regex($"^{pattern}"); }
+        private TokenRegex(string pattern) { Pattern = new Regex($"^{pattern}", RegexOptions.Singleline); }
 
         public static implicit operator TokenRegex(string e) => new TokenRegex(e);
         public static implicit operator Regex(TokenRegex e) => e.Pattern;

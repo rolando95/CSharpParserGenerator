@@ -9,7 +9,7 @@ namespace Utils.Serialization
     {
         public override Regex Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            return new Regex(reader.GetString());
+            return new Regex(reader.GetString(), RegexOptions.Singleline);
         }
 
         public override void Write(Utf8JsonWriter writer, Regex value, JsonSerializerOptions options)
