@@ -11,7 +11,6 @@ namespace CSharpParserGenerator
 {
     public class LexerToken<ELang> where ELang : Enum
     {
-        //[JsonConverter(typeof(JsonStringEnumConverter))]
         public Token<ELang> Token { get; }
 
         [JsonConverter(typeof(RegexJsonSerializer))]

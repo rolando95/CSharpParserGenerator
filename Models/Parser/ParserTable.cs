@@ -49,5 +49,12 @@ namespace CSharpParserGenerator
             if (!Actions.ContainsKey(fromState) || !Actions[fromState].ContainsKey(tokenId)) return null;
             return Actions[fromState][tokenId];
         }
+
+        public IEnumerable<Token<ELang>> GetAvailableTerminalsFromStateId(int fromState)
+        {
+            if (!Actions.ContainsKey(fromState)) return new List<Token<ELang>>();
+
+            return Actions[fromState].Keys.Where(k => k.IsTerminal).ToList();
+        }
     }
 }

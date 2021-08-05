@@ -8,8 +8,8 @@ namespace CSharpParserGenerator
 {
     public class Lexer<ELang> where ELang : Enum
     {
-        private IEnumerable<LexerToken<ELang>> Tokens;
-        private ELang IgnoreToken;
+        public IEnumerable<LexerToken<ELang>> Tokens { get; }
+        private ELang IgnoreToken { get; }
 
         public Lexer(LexerDefinition<ELang> tokens, ELang ignoreToken = default)
         {
@@ -33,7 +33,7 @@ namespace CSharpParserGenerator
 
                 if (match == null)
                 {
-                    return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: $"Invalid expression at position {position}: {text}");
+                    return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: $"Invalid character \"{textRemaining[0]}\" at position {position}: {text}");
                 }
 
                 var matchLength = match.MatchLength;

@@ -36,9 +36,9 @@ namespace CSharpParserGenerator
 
         public ParseResult<TResult> Parse<TResult>(string text)
         {
+            var lexerResult = Lexer.ProcessExpression(text);
             try
             {
-                var lexerResult = Lexer.ProcessExpression(text);
                 if (!lexerResult.Success) throw new InvalidOperationException(lexerResult.ErrorMessage);
 
                 var textQueue = new Queue<ParserNode<ELang>>(
@@ -60,7 +60,8 @@ namespace CSharpParserGenerator
 
                     if (action == null)
                     {
-                        throw new InvalidOperationException($"Syntax error: Invalid expression at position {nextNode.Position}. Received: {nextNode.Value}");
+                        var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(parserStack.Last().StateId).Select(t => t.Symbol.ToString());
+                        throw new InvalidOperationException($"Syntax error: Invalid value \"{nextNode.Value}\" at position {nextNode.Position}. Token types expected: {string.Join(", ", availableTokens)}");
                     }
 
                     switch (action.Action)
@@ -91,12 +92,12 @@ namespace CSharpParserGenerator
                     }
 
                 } while (!accept);
-                return new ParseResult<TResult>(success: true, value: intialParserNode.Value);
+                return new ParseResult<TResult>(lexerResult.Text, success: true, value: intialParserNode.Value);
             }
             catch (Exception e)
             {
                 var errors = new List<ErrorInfo>() { new ErrorInfo() { Type = e.GetType().Name, Description = e.Message } };
-                return new ParseResult<TResult>(errors: errors);
+                return new ParseResult<TResult>(lexerResult.Text, errors: errors);
             }
         }
 

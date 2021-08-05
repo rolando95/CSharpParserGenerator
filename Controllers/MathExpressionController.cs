@@ -4,6 +4,13 @@ using System;
 
 namespace CSharpParserGenerator.Controllers
 {
+    /// <summary>
+    /// In this example you can evaluate basic mathematical expressions using the library
+    /// <example>
+    /// <para>In the header of the request you can try sending:</para>
+    /// <para>headers: { expression : "( 18 + 2 ^ 5 ) / 10 * 5" }</para>
+    /// </example>
+    /// </summary>
     [ApiController]
     [Route("[Controller]")]
     public class MathExpressionController : ControllerBase

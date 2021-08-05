@@ -7,13 +7,15 @@ namespace CSharpParserGenerator
 {
     public class ParseResult<T>
     {
+        public string Text { get; }
         public bool Success { get; }
         public T Value { get; }
 
         public List<ErrorInfo> Errors { get; }
 
-        public ParseResult(bool success = false, dynamic value = null, List<ErrorInfo> errors = null)
+        public ParseResult(string text, bool success = false, dynamic value = null, List<ErrorInfo> errors = null)
         {
+            Text = text;
             Success = success;
             Errors = errors ?? new List<ErrorInfo>();
 
