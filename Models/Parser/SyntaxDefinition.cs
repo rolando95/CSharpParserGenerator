@@ -49,9 +49,10 @@ namespace CSharpParserGenerator
 
                 var rule = new Token<ELang>((ELang)definitionRule.Rule, type: ETokenTypes.NonTerminal);
                 rules.Add(new ProductionRule<ELang>(rule, nodes));
-
             }
 
+            var root = new ProductionRule<ELang>(Token<ELang>.RootToken, new List<Token<ELang>>() { rules.FirstOrDefault()?.Head });
+            rules.Insert(0, root);
             return rules;
         }
     }

@@ -89,13 +89,14 @@ namespace CSharpParserGenerator
         {
             get
             {
+                var head = Head.IsRoot ? "Root" : Head.Symbol.ToString();
                 var strNodes = Nodes.Select(n =>
                     (n.IsNonTerminal || n.IsTerminal) ? $"{n.Symbol.ToString()}{(n.Op != null ? "*" : "")}"
                     : n.IsPivot ? "."
                     : n.IsEnd ? "$"
                     : "UNKNOWN"
                 );
-                return $"{Head.Symbol} -> {string.Join(" ", strNodes)}".Replace(". ", ".");
+                return $"{head} -> {string.Join(" ", strNodes)}".Replace(". ", ".");
             }
         }
     }

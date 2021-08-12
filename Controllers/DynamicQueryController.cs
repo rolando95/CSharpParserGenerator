@@ -129,7 +129,7 @@ namespace CSharpParserGenerator.Controllers
                     new List<Token> { ELang.Property, ELang.Gte, ELang.Term, new Op(o => o[0] = new ExpressionNode() { Property = o[1], Operation = ELang.Gte, Value = o[3] }) },
                     new List<Token> { ELang.Property, ELang.Lte, ELang.Term, new Op(o => o[0] = new ExpressionNode() { Property = o[1], Operation = ELang.Lte, Value = o[3] }) },
 
-                    new List<Token> { ELang.LParenthesis, ELang.LogicalOr, ELang.RParenthesis, new Op(o => { o[0] = o[2]; }) },
+                    new List<Token> { ELang.LParenthesis, ELang.Expression, ELang.RParenthesis, new Op(o => { o[0] = o[2]; }) },
                 },
                 [ELang.Term] = new DefinitionRules
                 {

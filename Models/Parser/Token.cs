@@ -7,7 +7,8 @@ namespace CSharpParserGenerator
     public enum ETokenTypes
     {
         UndefinedTokenType, Terminal, NonTerminal,
-        Pivot = int.MaxValue,
+        Root = int.MaxValue,
+        Pivot = int.MaxValue - 1,
         End = int.MaxValue - 2,
         Operation = int.MaxValue - 3
     }
@@ -15,6 +16,7 @@ namespace CSharpParserGenerator
     [DebuggerDisplay("{StringToken}")]
     public class Token<ELang> : IEquatable<Token<ELang>> where ELang : Enum
     {
+        public static Token<ELang> RootToken => new Token<ELang>(type: ETokenTypes.Root);
         public static Token<ELang> PivotToken => new Token<ELang>(type: ETokenTypes.Pivot);
         public static Token<ELang> EndToken => new Token<ELang>(type: ETokenTypes.End);
 
@@ -23,10 +25,11 @@ namespace CSharpParserGenerator
         public int Id { get; }
         public List<Op> Op { get; set; }
 
-        public bool IsNonTerminal => Type == ETokenTypes.NonTerminal;
+        public bool IsNonTerminal => Type == ETokenTypes.NonTerminal || Type == ETokenTypes.Root;
         public bool IsTerminal => Type == ETokenTypes.Terminal;
         public bool IsPivot => Type == ETokenTypes.Pivot;
         public bool IsEnd => Type == ETokenTypes.End;
+        public bool IsRoot => Type == ETokenTypes.Root;
 
         public bool Equals(Token<ELang> other) => Type.Equals(other.Type) && Convert.ToInt32(Symbol) == Convert.ToInt32(other.Symbol);
         public bool Equals(Enum other) => Convert.ToInt32(Symbol) == Convert.ToInt32(other);
@@ -51,6 +54,7 @@ namespace CSharpParserGenerator
         {
             get
             {
+                if (IsRoot) return "Root";
                 if (Type == ETokenTypes.Operation) return "Operation";
                 if (IsPivot) return "(Pivot) .";
                 if (IsEnd) return "(End) $";
