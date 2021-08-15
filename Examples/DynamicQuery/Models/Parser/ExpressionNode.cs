@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace DynamicQuery
+namespace DynamicQuery.Models
 {
-    public class ExpressionNode
+    public class MyExpressionTree
     {
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ELang Operation { get; set; }
@@ -15,8 +15,8 @@ namespace DynamicQuery
         public object Value { get; set; }
 
         // Logical Operation Props
-        public ExpressionNode Left { get; set; }
-        public ExpressionNode Right { get; set; }
+        public MyExpressionTree Left { get; set; }
+        public MyExpressionTree Right { get; set; }
 
     }
 }

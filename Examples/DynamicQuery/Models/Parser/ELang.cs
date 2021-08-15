@@ -1,4 +1,4 @@
-namespace DynamicQuery
+namespace DynamicQuery.Models
 {
 
     public enum ELang

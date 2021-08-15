@@ -1,17 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using DynamicQuery.DBContext;
+using DynamicQuery.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 namespace DynamicQuery
@@ -28,6 +25,8 @@ namespace DynamicQuery
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<MyDbContext>(opt => opt.UseInMemoryDatabase("MyDatabase"));
+            services.AddScoped<MyDbContext>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -36,10 +35,11 @@ namespace DynamicQuery
 
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
+                c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
             });
 
-            services.AddSingleton<DynamicQueryParser>();
+            services.AddSingleton<MyQueryParser>();
+            services.AddTransient<LinqExpressionConverter>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

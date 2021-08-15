@@ -1,19 +1,44 @@
 using System;
 using System.Linq.Expressions;
+using DynamicQuery.Models;
 
-namespace DynamicQuery
+namespace DynamicQuery.Services
 {
-    public static class LinqExpressionConverter
+    public class LinqExpressionConverter
     {
-        public static Expression<Func<T, bool>> ToExpressionLambda<T>(ExpressionNode expression)
+        //
+        // Given as input to a MyExpressionTree, returns a Lambda expression that can be used as a query<br/>
+        // 
+        // Example: Given this expression tree:
+        //  
+        //                      / MyExpressionTree----------\ 
+        //                     |                             |
+        //                     | Operation : Elang.Or        |
+        //                     |                             |
+        //                      \___Left____________Right___/ 
+        //                           /                 \
+        //                          /                   \
+        //                         /                     \
+        //    / MyExpressionTree----------\         / MyExpressionTree----------\ 
+        //   |                             |       |                             |
+        //   | Property  : HasLicense      |       | Property  : DateOfBirth     |
+        //   | Operation : ELang.Eq        |       | Operation : ELang.Lte       |
+        //   | Value     : true            |       | Value     : "1990-01-01"    |
+        //   |                             |       |                             |
+        //    \___________________________/         \___________________________/ 
+        //  
+        // The following will be returned:
+        //   
+        // (T x) => x.HasLicense == true || x.DateOfBirth <= new DateTime("1990-01-01")
+        //
+        public Expression<Func<T, bool>> ToExpressionLambda<T>(MyExpressionTree expression)
         {
             var parameter = Expression.Parameter(typeof(T), "x");
             var body = GetLinqLogicalExpression<T>(parameter, expression);
             return Expression.Lambda<Func<T, bool>>(body, parameter);
         }
 
-
-        private static BinaryExpression GetLinqLogicalExpression<T>(ParameterExpression parameter, ExpressionNode expression)
+        private BinaryExpression GetLinqLogicalExpression<T>(ParameterExpression parameter, MyExpressionTree expression)
         {
             if (expression.isRelational)
             {
@@ -25,12 +50,13 @@ namespace DynamicQuery
             return expression.Operation switch
             {
                 ELang.And => Expression.AndAlso(left, right),
-                ELang.Or => Expression.Or(left, right),
-                _ => null
+                ELang.Or => Expression.OrElse(left, right),
+
+                _ => throw new InvalidOperationException("Internal error: Invalid operation")
             };
         }
 
-        private static BinaryExpression GetLinqRelationalExpression(ParameterExpression parameter, string property, ELang operation, object value)
+        private BinaryExpression GetLinqRelationalExpression(ParameterExpression parameter, string property, ELang operation, object value)
         {
             Expression member = Expression.Property(parameter, property); //x.property
             Expression constant = Expression.Constant(Convert.ChangeType(value, member.Type));
@@ -52,11 +78,11 @@ namespace DynamicQuery
                 ELang.Eq => Expression.Equal(member, constant),
                 ELang.Neq => Expression.NotEqual(member, constant),
 
-                _ => throw new InvalidOperationException("Internar error: Invalid operation")
+                _ => throw new InvalidOperationException("Internal error: Invalid operation")
             };
         }
 
-        private static Expression StringExpressionToLower(Expression value)
+        private Expression StringExpressionToLower(Expression value)
         {
             Expression.IfThen(
                 Expression.NotEqual(value, Expression.Constant(null)),

@@ -1,78 +1,80 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using DynamicQuery.Models;
+using DynamicQuery.Services;
+using DynamicQuery.DBContext;
+using System;
 
 namespace DynamicQuery.Controllers
 {
 
-
+    /// <summary>
+    /// This sample seeks to create your own query language to get a list of results by using linq<br/>
+    /// About syntaxis: 
+    /// * In this syntax, properties are case sensitive. numeric values group integers and floats and strings are enclosed in quotation marks
+    ///     - Property: **LastName**
+    ///     - String: **"Tom"**
+    ///     - Number: **30**
+    ///     - Boolean: **true**
+    /// * You can use any relational operation in this format:  _Property RelationalOperator value_ 
+    ///     - For example: **Firstname eq "Jose"**
+    ///     - Allowed relational operators: 
+    ///         * Equal: **eq**
+    ///         * Not equal: **neq**
+    ///         * Greater than or equal: **gte**
+    ///         * Less than or equal: **lte**
+    ///         * Greater than: **gt**
+    ///         * Less than: **lt**
+    /// * You can perform logical operations using the **AND**, **OR** operators.
+    ///     - Operator precedence is taken into account, so AND operations are performed before OR
+    ///     - For example: **haslicense eq true and DateOfBirth lte "1990-01-01"**
+    /// * It is possible to group operations with parentheses
+    /// </summary>
     [ApiController]
     [Route("[Controller]")]
     public class DynamicQueryController : ControllerBase
     {
-        private readonly DynamicQueryParser Parser;
+        private readonly MyQueryParser _parser;
+        private readonly LinqExpressionConverter _linqConverter;
+        private readonly MyDbContext _context;
 
-        /// <summary>
-        /// Seed data
-        /// </summary>
-        public static IQueryable<Person> Persons { get; } = new List<Person>()
+        public DynamicQueryController(MyQueryParser parser, MyDbContext context, LinqExpressionConverter linqConverter)
         {
-            new Person() { Id = 1, FirstName = "Rolando", LastName = "Rosales", Age = 25, HasLicense = true },
-            new Person() { Id = 3, FirstName = "Jose", LastName = "Gonzalez", Age = 40, HasLicense = false },
-            new Person() { Id = 4, FirstName = "Abdiel", LastName = "Jaen", Age = 30, HasLicense = true },
-            new Person() { Id = 5, FirstName = "Timmy", LastName = "Turner", Age = 15, HasLicense = false },
-            new Person() { Id = 6, FirstName = "Phineas", LastName = "Garcia", Age = 22, HasLicense = false },
-            new Person() { Id = 7, FirstName = "Samantha", LastName = "Phantom", Age = 25, HasLicense = true },
-            new Person() { Id = 8, FirstName = "Tom", LastName = "null", Age = 55, HasLicense = true }
-        }.AsQueryable();
-
-        public DynamicQueryController(DynamicQueryParser parser)
-        {
-            Parser = parser;
+            _parser = parser;
+            _context = context;
+            _linqConverter = linqConverter;
         }
 
         /// <remarks>
-        ///  This sample seeks to create your own query language to get a list of results by using linq<br/>
-        /// About syntaxis: 
-        /// * In this syntax, properties are case sensitive. numeric values group integers and floats and strings are enclosed in quotation marks
-        ///     - Property: **LastName**
-        ///     - String: **"Tom"**
-        ///     - Number: **30**
-        ///     - Boolean: **true**
-        /// * You can use any relational operation in this format:  _Property RelationalOperator value_ 
-        ///     - For example: **Firstname eq "Jose"** 
-        ///     - Allowed relational operators: 
-        ///         * Equal: **eq**
-        ///         * Not equal: **neq**
-        ///         * Greater than or equal: **gte**
-        ///         * Less than or equal: **lte**
-        ///         * Greater than: **gt**
-        ///         * Less than: **lt**
-        /// * You can perform logical operations using the **AND**, **OR** operators.
-        ///     - Operator precedence is taken into account, so AND operations are performed before OR
-        ///     - For example: **haslicense eq true and Age gte 30**
-        /// * It is possible to group operations with parentheses
-        /// 
+        /// This example uses a **Person** class list as the data model. The properties they contain are **Id, firstname, lastname, Age,** and **HasLicense**.
+        ///
         /// Try:
-        /// * /DynamicQuery?filter=
-        /// * /DynamicQuery?filter= age lt 30
-        /// * /DynamicQuery?filter= haslicense eq true and ( LastName eq "Rosales" or Age gte 30 ) 
-        ///  
-        /// <br/>This example uses a **Person** class list as the data model. The properties they contain are **Id, FirstName, LastName, Age, and HasLicense**. 
-        /// <br/>You are free to modify properties, records or even use some model in database.
+        /// * /Persons?filter=
+        /// * /Persons?filter= DateOfBirth lte "1990-01-01"
+        /// * /Persons?filter= haslicense eq true and ( lastname eq "Rosales" or DateOfBirth lte "1990-01-01" )  
         /// </remarks>
-        [HttpGet]
-        public IActionResult Query([FromQuery(Name = "filter")] string expression)
+        [HttpGet("/Persons")]
+        public IActionResult GetPersons([FromQuery(Name = "filter")] string expression)
         {
-            if (string.IsNullOrWhiteSpace(expression)) return Ok(new { Data = Persons });
+            try
+            {
 
-            var expressionTree = Parser.Parse(expression);
-            if (!expressionTree.Success) return BadRequest(expressionTree);
+                if (string.IsNullOrWhiteSpace(expression)) return Ok(new { Data = _context.People });
 
-            var expressionResult = LinqExpressionConverter.ToExpressionLambda<Person>(expressionTree.Value);
-            var Data = Persons.Where(expressionResult);
+                var MyExpressionTree = _parser.Parse(expression);
+                if (!MyExpressionTree.Success) return BadRequest(MyExpressionTree);
 
-            return Ok(new { Data });
+                var expressionResult = _linqConverter.ToExpressionLambda<Person>(MyExpressionTree.Value);
+                var Data = _context.People.Where(expressionResult);
+
+                return Ok(new { Data });
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest($"Invalid operation: {e.Message}");
+            }
         }
     }
 }
