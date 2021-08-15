@@ -1,20 +1,33 @@
-﻿using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using System;
+﻿using System;
+using CSharpParserGenerator;
+using System.Collections.Generic;
 
-namespace CSharpParserGenerator.Controllers
+namespace MathExpression
 {
-    /// <summary>
-    /// In this example you can evaluate basic mathematical expressions using the library
-    /// <example>
-    /// <para>In the header of the request you can try sending:</para>
-    /// <para>headers: { expression : "( 18 + 2 ^ 5 ) / 10 * 5" }</para>
-    /// </example>
-    /// </summary>
-    [ApiController]
-    [Route("[Controller]")]
-    public class MathExpressionController : ControllerBase
+    class Program
     {
+        static void Main(string[] args)
+        {
+            var parser = CompileParser();
+
+            Console.Write("Write math expression: ");
+            string expression = Console.ReadLine();
+
+            var result = parser.Parse<double>(expression);
+
+            if (result.Success)
+            {
+                Console.WriteLine($"Result: {result.Value}");
+            }
+            else
+            {
+                Console.WriteLine("Some errors have been detected:");
+                foreach (var error in result.Errors)
+                {
+                    Console.WriteLine(error.Description);
+                }
+            }
+        }
 
         public enum ELang
         {
@@ -23,13 +36,8 @@ namespace CSharpParserGenerator.Controllers
             Ignore, Pow, Mul, Sub, Plus, Div, LPar, RPar, Property
         }
 
-
-        [HttpGet]
-        public IActionResult Parser([FromHeader] string expression)
+        public static Parser<ELang> CompileParser()
         {
-            /// You only need to run this code once to generate the parser. 
-            /// We have left the configuration and instance of the parser on the controller to make the example easier to read.
-
             var tokens = new LexerDefinition<ELang>
             {
                 [ELang.Ignore] = "[ \\n]+",
@@ -74,14 +82,7 @@ namespace CSharpParserGenerator.Controllers
             });
 
             var lexer = new Lexer<ELang>(tokens, ELang.Ignore);
-            Parser<ELang> parser = new ParserGenerator<ELang>(lexer, rules).CompileParser();
-
-            /// You can run this part as many times as you want. Only requires one instance of the parser.
-
-            var result = parser.Parse<double>(expression);
-            if (!result.Success) return BadRequest(result);
-            return Ok(result);
-
+            return new ParserGenerator<ELang>(lexer, rules).CompileParser();
         }
     }
 }
