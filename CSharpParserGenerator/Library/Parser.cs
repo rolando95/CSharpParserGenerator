@@ -130,9 +130,9 @@ namespace CSharpParserGenerator
         }
 
 
-        private dynamic RunProductionRule(ProductionRule<ELang> productionRule, List<ParserNode<ELang>> parserNodes)
+        private object RunProductionRule(ProductionRule<ELang> productionRule, List<ParserNode<ELang>> parserNodes)
         {
-            var values = new List<dynamic>() { parserNodes.FirstOrDefault()?.Value };
+            var values = new List<object>() { parserNodes.FirstOrDefault()?.Value };
 
             for (var x = 0; x < productionRule.Count; ++x)
             {
