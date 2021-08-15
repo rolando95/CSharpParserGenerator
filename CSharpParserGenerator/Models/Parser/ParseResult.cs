@@ -30,7 +30,7 @@ namespace CSharpParserGenerator
 
             try
             {
-                Value = Convert.ChangeType(value, tType);
+                if (value != null) Value = Convert.ChangeType(value, tType);
             }
             catch
             {

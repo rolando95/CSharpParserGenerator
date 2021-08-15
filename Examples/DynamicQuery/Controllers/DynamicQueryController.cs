@@ -28,12 +28,6 @@ namespace CSharpParserGenerator.Controllers
         Property,
     }
 
-    /// <summary>
-    /// This sample seeks to create your own query language to get a list of results by using linq
-    /// <example>
-    /// <para>Try: /DynamicQuery?filter= HasLicense eq true and ( LastName eq "Rosales" or Age gte 30 )</para>
-    /// </example>
-    /// </summary>
     [ApiController]
     [Route("[Controller]")]
     public class DynamicQueryController : ControllerBase
@@ -53,11 +47,42 @@ namespace CSharpParserGenerator.Controllers
             new Person() { Id = 8, FirstName = "Tom", LastName = "null", Age = 55, HasLicense = true }
         }.AsQueryable();
 
-
+        /// <remarks>
+        ///  This sample seeks to create your own query language to get a list of results by using linq<br/>
+        /// About syntaxis: 
+        /// * In this syntax, properties are case sensitive. numeric values group integers and floats and strings are enclosed in quotation marks
+        ///     - Property: **LastName**
+        ///     - String: **"Tom"**
+        ///     - Number: **30**
+        ///     - Boolean: **true**
+        /// * You can use any relational operation in this format:  _Property RelationalOperator value_ 
+        ///     - For example: **Firstname eq "Jose"** 
+        ///     - Allowed relational operators: 
+        ///         * Equal: **eq**
+        ///         * Not equal: **neq**
+        ///         * Greater than or equal: **gte**
+        ///         * Less than or equal: **lte**
+        ///         * Greater than: **gt**
+        ///         * Less than: **lt**
+        /// * You can perform logical operations using the **AND**, **OR** operators.
+        ///     - Operator precedence is taken into account, so AND operations are performed before OR
+        ///     - For example: **haslicense eq true and Age gte 30**
+        /// * It is possible to group operations with parentheses
+        /// 
+        /// Try:
+        /// * /DynamicQuery?filter=
+        /// * /DynamicQuery?filter= age lt 30
+        /// * /DynamicQuery?filter= haslicense eq true and ( LastName eq "Rosales" or Age gte 30 ) 
+        ///  
+        /// <br/>This example uses a **Person** class list as the data model. The properties they contain are **Id, FirstName, LastName, Age, and HasLicense**. 
+        /// <br/>You are free to modify properties, records or even use some model in database.
+        /// </remarks>
+        /// <param name="expression">
+        /// </param>
         [HttpGet]
         public IActionResult Query([FromQuery(Name = "filter")] string expression)
         {
-            if (string.IsNullOrWhiteSpace(expression)) return Ok(Persons);
+            if (string.IsNullOrWhiteSpace(expression)) return Ok(new { Data = Persons });
 
             /// You only need to run this code once to generate the parser. 
             /// We have left the configuration and instance of the parser on the controller to make the example easier to read.
