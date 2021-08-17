@@ -68,7 +68,8 @@ namespace CSharpParserGenerator
                     {
                         case ActionType.Accept:
                             {
-                                parserStack = Reduce(action, parserStack, ProductionRules[0]);
+                                if (parserStack.Count() != 2) throw new InvalidOperationException("Internal Error: Unknown error");
+                                intialParserNode.Value = parserStack.Last().Value;
                                 accept = true;
                                 break;
                             }
@@ -86,7 +87,7 @@ namespace CSharpParserGenerator
                             }
                         case ActionType.Reduce:
                             {
-                                parserStack = Reduce(action, parserStack, ProductionRules[action.To]);
+                                parserStack = Reduce(parserStack, ProductionRules[action.To]);
                                 break;
                             }
                     }
@@ -101,20 +102,12 @@ namespace CSharpParserGenerator
             }
         }
 
-        private List<ParserNode<ELang>> Reduce(ActionState<ELang> currentAction, List<ParserNode<ELang>> parserStack, ProductionRule<ELang> productionRule)
+        private List<ParserNode<ELang>> Reduce(List<ParserNode<ELang>> parserStack, ProductionRule<ELang> productionRule)
         {
             var parserNodes = parserStack.PopRange(productionRule.Count);
             var ruleResult = RunProductionRule(productionRule, parserNodes);
             var lastNodeInStack = parserStack.Last();
-
-            if (currentAction.Action.Equals(ActionType.Accept))
-            {
-                lastNodeInStack.Value = ruleResult;
-                return parserStack;
-            }
-
             var gotoAction = ParserTable.GetAction(lastNodeInStack.StateId, productionRule.Head);
-            if (!gotoAction.Action.Equals(ActionType.Goto)) throw new InvalidOperationException("Internal error: next action Goto expected");
 
             var reduceNodeResult = new ParserNode<ELang>
             (

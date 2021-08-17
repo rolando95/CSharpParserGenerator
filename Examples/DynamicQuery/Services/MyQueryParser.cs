@@ -47,11 +47,11 @@ namespace DynamicQuery.Services
 
         private Parser<ELang> CompileParser()
         {
-            var tokens = new LexerDefinition<ELang>
+            var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
-                [ELang.Ignore] = "[ \\n]+",
+                [ELang.Ignore] = "[ \\n]+", // Ignore spaces and line breaks
                 [ELang.LParenthesis] = "\\(", // Left parenthesis
-                [ELang.RParenthesis] = "\\)", // Rigt parenthesis
+                [ELang.RParenthesis] = "\\)", // Right parenthesis
 
                 [ELang.Eq] = "(?i)eq", // Equal
                 [ELang.Neq] = "(?i)neq", // Not Equal
@@ -70,7 +70,7 @@ namespace DynamicQuery.Services
                 [ELang.Number] = "[-+]?\\d*(\\.\\d+)?", // Number
 
                 [ELang.Property] = "[_a-zA-Z]+\\w*" // Property
-            };
+            });
 
             var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
             {
