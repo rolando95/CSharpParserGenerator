@@ -45,12 +45,17 @@ namespace CSharpParserGenerator
 
     }
 
-    public class LexerDefinition<ELang> : Dictionary<ELang, TokenRegex> where ELang : Enum
+    public class LexerDefinition<ELang> where ELang : Enum
     {
+        private Dictionary<ELang, TokenRegex> Tokens { get; }
+        public LexerDefinition(Dictionary<ELang, TokenRegex> tokens)
+        {
+            Tokens = tokens;
+        }
+
         public IEnumerable<LexerToken<ELang>> MapTokenDefinitionEnumerable()
         {
-            Dictionary<ELang, TokenRegex> dictionary = this;
-            return dictionary.AsEnumerable().Select(pair => new LexerToken<ELang>(new Token<ELang>(pair.Key, type: ETokenTypes.Terminal), pair.Value));
+            return Tokens.AsEnumerable().Select(pair => new LexerToken<ELang>(new Token<ELang>(pair.Key, type: ETokenTypes.Terminal), pair.Value));
         }
     }
 }

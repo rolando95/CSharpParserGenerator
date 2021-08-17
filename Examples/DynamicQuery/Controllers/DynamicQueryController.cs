@@ -5,6 +5,7 @@ using DynamicQuery.Models;
 using DynamicQuery.Services;
 using DynamicQuery.DBContext;
 using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace DynamicQuery.Controllers
 {
@@ -12,7 +13,7 @@ namespace DynamicQuery.Controllers
     /// <summary>
     /// This sample seeks to create your own query language to get a list of results by using linq<br/>
     /// About syntaxis: 
-    /// * In this syntax, properties are case sensitive. numeric values group integers and floats and strings are enclosed in quotation marks
+    /// * In this syntax, properties are case insensitive. numeric values group integers and floats and strings are enclosed in quotation marks
     ///     - Property: **LastName**
     ///     - String: **"Tom"**
     ///     - Number: **30**
@@ -50,23 +51,23 @@ namespace DynamicQuery.Controllers
         /// This example uses a **Person** class list as the data model. The properties they contain are **Id, firstname, lastname, Age,** and **HasLicense**.
         ///
         /// Try:
-        /// * /Persons?filter=
-        /// * /Persons?filter= DateOfBirth lte "1990-01-01"
-        /// * /Persons?filter= haslicense eq true and ( lastname eq "Rosales" or DateOfBirth lte "1990-01-01" )  
+        /// * /People?filter=
+        /// * /People?filter= DateOfBirth lte "1990-01-01"
+        /// * /People?filter= haslicense eq true and ( lastname eq "Rosales" or DateOfBirth lte "1990-01-01" )  
         /// </remarks>
-        [HttpGet("/Persons")]
-        public IActionResult GetPersons([FromQuery(Name = "filter")] string expression)
+        [HttpGet("/People")]
+        public IActionResult GetPeople([FromQuery(Name = "filter")] string expression)
         {
             try
             {
 
-                if (string.IsNullOrWhiteSpace(expression)) return Ok(new { Data = _context.People });
+                if (string.IsNullOrWhiteSpace(expression)) return Ok(new { Data = _context.People.Include(p => p.Address) });
 
-                var MyExpressionTree = _parser.Parse(expression);
-                if (!MyExpressionTree.Success) return BadRequest(MyExpressionTree);
+                var expressionTree = _parser.Parse(expression);
+                if (!expressionTree.Success) return BadRequest(expressionTree);
 
-                var expressionResult = _linqConverter.ToExpressionLambda<Person>(MyExpressionTree.Value);
-                var Data = _context.People.Where(expressionResult);
+                var expressionResult = _linqConverter.ToExpressionLambda<Person>(expressionTree.Value);
+                var Data = _context.People.Include(p => p.Address).Where(expressionResult);
 
                 return Ok(new { Data });
 

@@ -38,7 +38,7 @@ namespace MathExpression
 
         public static Parser<ELang> CompileParser()
         {
-            var tokens = new LexerDefinition<ELang>
+            var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
                 [ELang.Ignore] = "[ \\n]+",
                 [ELang.LPar] = "\\(",
@@ -49,7 +49,7 @@ namespace MathExpression
                 [ELang.Div] = "/",
                 [ELang.Sub] = "-",
                 [ELang.Property] = "[-+]?\\d*(\\.\\d+)?",
-            };
+            });
 
             var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
             {
