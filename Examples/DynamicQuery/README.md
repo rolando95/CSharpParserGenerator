@@ -1,9 +1,9 @@
 # Dynamic Query (CSharpParserGenerator example)
 This sample seeks to create your own query language to get a list of results by using linq<br/>
 
-## About syntaxis: 
+## About syntaxis 
 
-* In this syntax, properties are case insensitive. numeric values group integers and floats and strings are enclosed in quotation marks
+* In this syntax, the primitive types are String, Number, Boolean, and Property. String and property types are case insensitive
     - Property: **LastName**
     - String: **"Tom"**
     - Number: **30**
@@ -27,18 +27,18 @@ This sample seeks to create your own query language to get a list of results by 
     - **haslicense eq true and ( lastname eq "Rosales" or dateOfBirth lte "1990-01-01" )**
 
 ## How to run this sample?
-By default, the /People endpoint returns a list of people. 
+By default, the **/People** endpoint returns a list of people. 
 According to the filters you send in the request only those people who meet the criteria will be returned. You can filter by any field within the Person object.
 
 * Download and install the latest .Net Core version available [Here](https://dotnet.microsoft.com/).
 * Clone [CSharpParserGenerator](https://github.com/rolando95/CSharpParserGenerator) repository. The repository includes this example
 * From the workspace folder, locate the terminal in the path of this example
-```
+```properties
     cd Examples/DynamicQuery/
 ```
 
 * Run the following commands:
-```
+```properties
     dotnet restore
     dotnet run
 ```
@@ -50,21 +50,42 @@ According to the filters you send in the request only those people who meet the 
 
 ## Example project structure
 * Parser Class
-    - It is recommended to create a 'own' class that contains all the lexical, syntactic and semantic definitions of the language. It is important to instantiate the parser only once during the entire execution of the program, because it is an expensive operation. You can guide yourself in [./Services/MyQueryParser.cs](./Services/MyQueryParser.cs).
-* Startup
-    - If you use dependency injection, it is recommended to use the Singleton pattern for your 'own' parser class. Or, if you prefer, have an instance of the static Parser and make sure it is only instantiated once.
-
+    - It is recommended to create a 'own' class that contains all the lexical, syntactic and semantic definitions of the language and compiled parser. If you choose to create your own parser class and work with dependency injection, you can guide yourself with [./Services/MyQueryParser.cs](./Services/MyQueryParser.cs) (Notice that in the [Startup.cs](./Startup.cs), MyQueryParser class was injected as a Singleton).
+    - To generate the parser, lexer and syntax rules are required.
 ```C#
-    services.AddSingleton<MyParserClass>();
+    var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
+    {
+        [MyLangEnum.TokenName] = "regex pattern"
+        // ...
+    });
+
+    var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+    {
+        [MyLangEnum.NonTerminalToken] = new DefinitionRules
+        {
+            new List<Token> { /* Production rules */, new Op(o => { /* Semantic actions */ }) }
+            // ...
+        },
+
+        // ...
+    });
+
+    var lexer = new Lexer<ELang>(tokens, MyLangEnum.IgnoreToken);
+    var MyParser = new ParserGenerator<ELang>(lexer, rules).CompileParser();
+```
+* Parse Function
+    - Having the parser, simply call the Parse method and send an input string as a parameter.
+```C#
+    var parseResult = MyParser.Parse<MyResultType>(inputString);
 ```
 And that's it! After defining the rules of the parser and having an instance it is possible to call the Parse method as many times as you want. In this example you can see it in action in [./Controllers/DynamicQueryController.cs](./Controllers/DynamicQueryController.cs).
 
 ## How this sample has been implemented using CSharpParserGenerator?
 ### Lexer
 * The first thing is to define the tokens and required for the lexical parser.
-* The language in this example consists of the **String, Number**, and **Boolean** tokens, a token named **property** that refers to the property you want to query, the relational operators **Eq (equal), Neq (not equal), Gt (greater than), Lt (Less than), Gte (greater than equal)and lte (less than equal)**, the logical operators **And** and **Or**, and the **parentheses**. Additional a token called **Ignore** will be created that will contain the spaces and line breaks that will be ignored when reading the input string.
+* The language in this example consists of the **String, Number**, and **Boolean** tokens, a token named **property** that refers to the property you want to query; the relational operators **Eq (equal), Neq (not equal), Gt (greater than), Lt (Less than), Gte (greater than equal)** and **lte (less than equal)**; the logical operators **And** and **Or** and the **parentheses**. Additional a token called **Ignore** will be created that will contain the spaces and line breaks that will be ignored when reading the input string.
 * For each token, you need to define a regular expression that represents it. It is important to put those tokens that are reserved words first, because otherwise (for example), some tokens such as And, Or, Gte, etc. can be taken as property, because they really belong to the regular expression property. Be careful with order.
-* For CSharpParserGenerator, tokens can be defined as follows (PD: **(?i)** means that the pattern is case insensitive):
+* For CSharpParserGenerator, tokens can be defined as follows:
 ```C#
     var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
     {
@@ -90,8 +111,10 @@ And that's it! After defining the rules of the parser and having an instance it 
 
         [ELang.Property] = "[_a-zA-Z]+\\w*" // Property
     });
+
+    //PD: (?i) means that the pattern is case insensitive
 ```
-* It can be noted that there is an **enum** called **ELang**. This must carry all terminal and non-terminal tokens of the language
+* It can be noted that there is an **enum** called [ELang](./Models/Parser/ELang.cs). This must carry all terminal and non-terminal tokens of the language
 ```C#
     public enum ELang
     {
@@ -131,17 +154,17 @@ And that's it! After defining the rules of the parser and having an instance it 
     LogicalAnd -> LogicalAnd and Relational
     LogicalAnd -> Relational
     
-    Relational -> Property eq Term
-    Relational -> Property neq Term
-    Relational -> Property gt Term
-    Relational -> Property lt Term
-    Relational -> Property gte Term
-    Relational -> Property lte Term
+    Relational -> property eq Term
+    Relational -> property neq Term
+    Relational -> property gt Term
+    Relational -> property lt Term
+    Relational -> property gte Term
+    Relational -> property lte Term
     Relational -> ( Expression )
     
-    Term -> Number
-    Term -> Boolean
-    Term -> String
+    Term -> number
+    Term -> boolean
+    Term -> string
 ```
 * In CSharpParserGenerator, the definition of the rules would look as follows:
 ```C#
@@ -170,22 +193,22 @@ And that's it! After defining the rules of the parser and having an instance it 
         },
         [ELang.Relational] = new DefinitionRules
         {
-            // Relational -> Property eq Term
+            // Relational -> property eq Term
             new List<Token> { ELang.Property, ELang.Eq, ELang.Term },
 
-            // Relational -> Property neq Term
+            // Relational -> property neq Term
             new List<Token> { ELang.Property, ELang.Neq, ELang.Term },
 
-            // Relational -> Property gt Term
+            // Relational -> property gt Term
             new List<Token> { ELang.Property, ELang.Gt, ELang.Term },
             
-            // Relational -> Property lt Term
+            // Relational -> property lt Term
             new List<Token> { ELang.Property, ELang.Lt, ELang.Term },
 
-            // Relational -> Property gte Term
+            // Relational -> property gte Term
             new List<Token> { ELang.Property, ELang.Gte, ELang.Term },
             
-            // Relational -> Property lte Term
+            // Relational -> property lte Term
             new List<Token> { ELang.Property, ELang.Lte, ELang.Term },
 
             // Relational -> ( Expression )
@@ -193,19 +216,19 @@ And that's it! After defining the rules of the parser and having an instance it 
         },
         [ELang.Term] = new DefinitionRules
         {
-            // Term -> Number
+            // Term -> number
             new List<Token> { ELang.Number },
 
-            // Term -> Boolean
+            // Term -> boolean
             new List<Token> { ELang.Boolean },
 
-            // Term -> String
+            // Term -> string
             new List<Token> { ELang.String },
         }
     });
 ```
 ### Semantics
-* The previous syntax definition is incomplete. Com o you can see the rules of production are clear, but there is no 'logic' that shows what to do.
+* The previous syntax definition is incomplete. As you can see, the rules of production are clear, but there is no 'logic' that shows what to do.
     - We take this production rule from another example:
     ```C#
         [ELang.Addition] = new DefinitionRules
@@ -213,10 +236,10 @@ And that's it! After defining the rules of the parser and having an instance it 
             new List<Token> { ELang.Number, ELang.Add, ELang.Number },
         }
     ```
-    - It can be read as _"Addition produces Number Add Number"_. For **CSharpParserGenerator**, this translates to a single **List** where the first element ```[0]``` is the non-terminal of production rule (Addition) and the other positions are Number ```[1]```, Add ```[2]```, and Number ```[3]```. If we expect to raise the result of that sum in the tree, having clear the initial values of the List, we can infer that the operation would be ```o[0] = o[1] + o[3]```.
+    - It can be read as _"Addition produces Number Add Number"_. For **CSharpParserGenerator**, this translates to a single **List** where the first element ```[0]``` is the non-terminal of production rule _(Addition)_ and the other positions are _Number_ ```[1]```, _Add_ ```[2]```, and _Number_ ```[3]```. If we expect to raise the result of that sum in the tree, having clear the initial values of the List, we can infer that the operation would be ```o[0] = o[1] + o[3]```.
     - In CSharpParserGenerator, you can create a semantic operation with an instance with the ```Op``` class. For the sum production rule mentioned, it can be written as follows:
     ```C#
-    new Op(o => { o[0] = o[1] + o[3]; })
+        new Op(o => { o[0] = o[1] + o[3]; })
     ```
     - The output of the production rule with the semantic operation in CSharpParserGenerator would be as follows:
     ```C#
@@ -226,7 +249,7 @@ And that's it! After defining the rules of the parser and having an instance it 
         }
     ```
     - As you can see, just write the operation at the end of the production rule. Now let's continue with the example of the Dynamic Parser...
-* In CSharpParserGenerator you can upload any object you want in each production rule. For this example we have created a class called MyExpressionTree:
+* In definition rules you can upload any object you want in each production rule. For this example we have created a class called MyExpressionTree:
 ```C#
     public class MyExpressionTree
     {
@@ -242,7 +265,7 @@ And that's it! After defining the rules of the parser and having an instance it 
 
     }
 ```
-* The idea is that for each node, the operation is stored whether it is relational or logical; in case of being relational store the property of the query and the value to compare and for logical operations the left and right nodes of the operation.
+* The idea with this example is to create a binary syntax tree. Each node indicates whether the operation is relational (Storing the property, operation, and value to compare) or whether it is logical (Storing the operation and the nodes on the left and right side of the tree).
 * So if we have the expression "Relational produces Property Eq Term" written as: 
 ```C#
     [ELang.Relational] = new DefinitionRules
@@ -280,4 +303,4 @@ And that's it! After defining the rules of the parser and having an instance it 
 ```C#
     var parser = new ParserGenerator<ELang>(lexer, rules).CompileParser();
 ```
-* You can see the implementation of all the rules in [/Services/MyQueryParser.cs](./Services/MyQueryParser.cs)
+* You can see the implementation of all rules in [./Services/MyQueryParser.cs](./Services/MyQueryParser.cs)

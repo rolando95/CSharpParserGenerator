@@ -13,7 +13,7 @@ namespace DynamicQuery.Controllers
     /// <summary>
     /// This sample seeks to create your own query language to get a list of results by using linq<br/>
     /// About syntaxis: 
-    /// * In this syntax, properties are case insensitive. numeric values group integers and floats and strings are enclosed in quotation marks
+    /// * In this syntax, the primitive types are String, Number, Boolean, and Property. String and property types are case insensitive
     ///     - Property: **LastName**
     ///     - String: **"Tom"**
     ///     - Number: **30**
