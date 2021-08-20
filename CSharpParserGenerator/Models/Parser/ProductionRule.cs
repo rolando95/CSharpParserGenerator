@@ -74,8 +74,13 @@ namespace CSharpParserGenerator
 
             if (PivotIdx < 0)
             {
-                Nodes = nodes.Prepend(pivotNode).Append(endNode).ToList();
+                Nodes.Insert(0, pivotNode);
                 PivotIdx = 0;
+            }
+
+            if (!Nodes.Any(n => n.IsEnd))
+            {
+                Nodes.Add(endNode);
             }
 
             CurrentNode = Nodes[PivotIdx + 1];

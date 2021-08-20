@@ -27,14 +27,13 @@ namespace CSharpParserGenerator
             var rules = new List<ProductionRule<ELang>>();
             foreach (var definitionRule in definitionRules)
             {
-                var nodes = new List<Token<ELang>>();
+                var nodes = new List<Token<ELang>>() { Token<ELang>.PivotToken };
                 var definitionNodes = definitionRule.Nodes;
 
                 foreach (var definitionNode in definitionNodes)
                 {
                     if (definitionNode.Type == ETokenTypes.Operation)
                     {
-                        if (!nodes.Any()) throw new InvalidOperationException("First production node must be an Terminal / NonTerminal token instead of Operation");
                         var last = nodes.Last();
 
                         if (last.Op != null) last.Op.AddRange(definitionNode.Op);
