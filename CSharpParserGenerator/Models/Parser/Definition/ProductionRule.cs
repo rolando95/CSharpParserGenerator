@@ -16,11 +16,11 @@ namespace CSharpParserGenerator
         /// </summary>
         public int Count { get; }
 
-        /// <summary>
-        /// Get nodes idx ignoring the pivot and end
-        /// </summary>
-        /// 
-        public Token<ELang> this[int idx] => Nodes.Where(n => n.IsTerminal || n.IsNonTerminal).ToList()[idx];
+        // /// <summary>
+        // /// Get nodes idx ignoring the pivot and end
+        // /// </summary>
+        // /// 
+        // public Token<ELang> this[int idx] => Nodes.Where(n => n.IsTerminal || n.IsNonTerminal).ToList()[idx];
 
         public Guid Id { get; }
         public Token<ELang> Head { get; }
@@ -96,7 +96,7 @@ namespace CSharpParserGenerator
             {
                 var head = Head.IsRoot ? "Root" : Head.Symbol.ToString();
                 var strNodes = Nodes.Select(n =>
-                    (n.IsNonTerminal || n.IsTerminal) ? $"{n.Symbol.ToString()}{(n.Op != null ? "*" : "")}"
+                    (n.IsNonTerminal || n.IsTerminal) ? $"{n.Symbol.ToString()}{(n.HasOperations ? "*" : "")}"
                     : n.IsPivot ? "."
                     : n.IsEnd ? "$"
                     : "UNKNOWN"

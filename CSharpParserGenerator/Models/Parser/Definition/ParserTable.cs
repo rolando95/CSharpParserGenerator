@@ -54,7 +54,7 @@ namespace CSharpParserGenerator
         {
             if (!Actions.ContainsKey(fromState)) return new List<Token<ELang>>();
 
-            return Actions[fromState].Keys.Where(k => k.IsTerminal).ToList();
+            return Actions[fromState].Keys.Where(k => k.IsTerminal || k.IsEnd).ToList();
         }
     }
 }
