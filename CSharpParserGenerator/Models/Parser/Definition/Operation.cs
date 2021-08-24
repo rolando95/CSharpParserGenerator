@@ -5,20 +5,20 @@ namespace CSharpParserGenerator
 {
     public class Op
     {
-        Func<List<dynamic>, dynamic> @Func;
-        Action<List<dynamic>> @Action;
+        Func<dynamic[], dynamic> @Func;
+        Action<dynamic[]> @Action;
 
-        public Op(Func<List<dynamic>, dynamic> func)
+        public Op(Func<dynamic[], dynamic> func)
         {
             @Func = func;
         }
 
-        public Op(Action<List<dynamic>> action)
+        public Op(Action<dynamic[]> action)
         {
             @Action = action;
         }
 
-        public void Callback(List<dynamic> args)
+        public void Callback(dynamic[] args)
         {
             if (Func != null) { @Func(args); return; }
             if (Action != null) { @Action(args); return; }

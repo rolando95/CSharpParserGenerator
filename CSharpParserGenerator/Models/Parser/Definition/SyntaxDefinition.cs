@@ -36,14 +36,14 @@ namespace CSharpParserGenerator
                     {
                         var last = nodes.Last();
 
-                        if (last.Op != null) last.Op.AddRange(definitionNode.Op);
-                        else last.Op = definitionNode.Op;
+                        if (last.HasOperations) last.Operations.AddRange(definitionNode.Operations);
+                        else last.Operations = definitionNode.Operations;
 
                         continue;
                     }
 
                     var type = rulesList.Contains((ELang)definitionNode.Symbol) ? ETokenTypes.NonTerminal : ETokenTypes.Terminal;
-                    nodes.Add(new Token<ELang>((ELang)definitionNode.Symbol, definitionNode.Op, type));
+                    nodes.Add(new Token<ELang>((ELang)definitionNode.Symbol, definitionNode.Operations, type));
                 }
 
                 var rule = new Token<ELang>((ELang)definitionRule.Rule, type: ETokenTypes.NonTerminal);

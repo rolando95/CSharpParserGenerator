@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace CSharpParserGenerator
 {
@@ -19,12 +20,14 @@ namespace CSharpParserGenerator
         public static Token<ELang> RootToken => new Token<ELang>(type: ETokenTypes.Root);
         public static Token<ELang> PivotToken => new Token<ELang>(type: ETokenTypes.Pivot);
         public static Token<ELang> EndToken => new Token<ELang>(type: ETokenTypes.End);
+        public static Token<ELang> Operation => new Token<ELang>(type: ETokenTypes.Operation);
 
         public ETokenTypes Type { get; }
         public ELang Symbol { get; }
         public int Id { get; }
-        public List<Op> Op { get; set; }
+        public List<Op> Operations { get; set; }
 
+        public bool HasOperations => Operations?.Any() ?? false;
         public bool IsNonTerminal => Type == ETokenTypes.NonTerminal || Type == ETokenTypes.Root;
         public bool IsTerminal => Type == ETokenTypes.Terminal;
         public bool IsPivot => Type == ETokenTypes.Pivot;
@@ -36,10 +39,10 @@ namespace CSharpParserGenerator
         public override bool Equals(object other) => other?.GetType() == typeof(Token<ELang>) ? Equals(other as Token<ELang>) : Equals(other as Enum);
         public override int GetHashCode() => new { Type, Symbol }.GetHashCode();
 
-        public Token(ELang token = default, List<Op> op = null, ETokenTypes type = ETokenTypes.UndefinedTokenType)
+        public Token(ELang token = default, List<Op> operations = null, ETokenTypes type = ETokenTypes.UndefinedTokenType)
         {
             Symbol = token;
-            Op = op;
+            Operations = operations;
             Type = type;
 
             Id = Convert.ToInt32(token);
@@ -54,11 +57,17 @@ namespace CSharpParserGenerator
         {
             get
             {
-                if (IsRoot) return "Root";
-                if (Type == ETokenTypes.Operation) return "Operation";
-                if (IsPivot) return "(Pivot) .";
-                if (IsEnd) return "(End) $";
-                return $"({Type}) {Symbol}";
+                var result = Type switch
+                {
+                    ETokenTypes.Root => "Root",
+                    ETokenTypes.Operation => "(Operation) op",
+                    ETokenTypes.Pivot => "(Pivot) .",
+                    ETokenTypes.End => "(End) $",
+                    _ => $"({Type}) {Symbol}"
+                };
+
+                if (Type != ETokenTypes.Operation && HasOperations) result += "*";
+                return result;
             }
         }
     }
