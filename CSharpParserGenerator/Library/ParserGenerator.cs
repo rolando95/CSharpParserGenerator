@@ -240,38 +240,67 @@ namespace CSharpParserGenerator
         {
             parserTable ??= new ParserTable<ELang>();
 
-            foreach (var producctionRule in currentState.ProductionRules)
+            foreach (var productionRule in currentState.ProductionRules)
             {
                 var currentStateId = currentState.Id;
-                var productionNode = producctionRule.CurrentNode;
+                var productionNode = productionRule.CurrentNode;
 
-                if (parserTable[currentStateId, productionNode] != null) continue;
+
 
                 // Reduce
-                if (producctionRule.IsEnd)
+                if (productionRule.IsEnd)
                 {
-                    var rule = producctionRule.Head;
-                    var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(producctionRule));
-                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx);
+                    var rule = productionRule.Head;
+                    var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(productionRule));
+                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx, productionRule.StringProductionRule);
 
                     foreach (var token in follows[rule])
                     {
+                        // Check conflicts
+                        var currentActionState = parserTable[currentStateId, token];
+                        var result = currentActionState?.Equals(actionState);
+                        if(currentActionState != null && !currentActionState.Equals(actionState))
+                        {
+                            throw GetConflictException(currentActionState, actionState);
+                        }
+
                         parserTable[currentStateId, token] = actionState;
                     }
 
                     continue;
                 }
 
+                // Goto / Shift
                 {
                     var actionType = productionNode.IsNonTerminal ? ActionType.Goto : ActionType.Shift;
-                    var actionState = new ActionState<ELang>(actionType, producctionRule.NextState.Id);
+                    var actionState = new ActionState<ELang>(actionType, productionRule.NextState.Id, productionRule.StringProductionRule);
+
+                    // Check conflicts
+                    var currentActionState = parserTable[currentStateId, productionNode];
+                    if(currentActionState != null && !actionState.Action.Equals(currentActionState.Action))
+                    {
+                        throw GetConflictException(currentActionState, actionState);
+                    }
+
+                    if(currentActionState != null) continue;
+
                     parserTable[currentStateId, productionNode] = actionState;
-                    GetParserTable(follows, rootState, producctionRule.NextState, parserTable);
+                    GetParserTable(follows, rootState, productionRule.NextState, parserTable);
                 }
 
             }
 
             return parserTable;
+        }
+
+        private InvalidOperationException GetConflictException(ActionState<ELang> a, ActionState<ELang> b)
+        {
+            return new InvalidOperationException(
+    @$"Conflict detected. Possible {a.Action.ToString()}/{b.Action.ToString()} operations
+    To solve this conflict, refactor production rules: 
+    {a.StringProductionRule}
+    {b.StringProductionRule}"
+            );
         }
     }
 }
