@@ -56,8 +56,8 @@ namespace CSharpParserGenerator
 
         private SyntaxNode<ELang> ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)
         {
-
-            var defaultNode = new LexerNode<ELang>(null, lexerNodes.Last().Position + lexerNodes.Last().Substring.Length, Token<ELang>.EndToken, null);
+            var lastLexerNode = lexerNodes.LastOrDefault();
+            var defaultNode = new LexerNode<ELang>(null, lastLexerNode != null? lastLexerNode.Position + lastLexerNode.Substring.Length : 0, Token<ELang>.EndToken, null);
 
             var inputQueue = new Queue<LexerNode<ELang>>(lexerNodes.Append(defaultNode));
             var nextNode = inputQueue.Dequeue();
@@ -113,7 +113,7 @@ namespace CSharpParserGenerator
                                 productionRule.Head,
                                 syntaxNode,
                                 currentState,
-                                parserNodes.Last().Position
+                                parserNodes.LastOrDefault()?.Position ?? 0
                             ));
                             break;
                         }

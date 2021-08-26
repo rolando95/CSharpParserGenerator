@@ -10,18 +10,26 @@ namespace CSharpParserGenerator
     [DebuggerDisplay("{Action} - State {To}")]
 
 
-    public class ActionState<ELang> where ELang : Enum
+    public class ActionState<ELang> : IEquatable<ActionState<ELang>> where ELang : Enum
     {
         public ActionType Action { get; }
         public int To { get; }
-
+        public string StringProductionRule { get; }
+        
         /// <summary>
         /// Creates a transition action. Depending on the type of action, the value of To can be inferred in a state break or production rule. 
         /// <para>If the action is Shift and To is 4, it reads as "Shift to state 4". </para>
         /// <para>If the action is Goto and To is 3, it reads as "Goto state 3". </para>
         /// <para>If the action is Reduce and To is 2, it reads as "Reduce to production rule 2" and so on.</para>
         /// </summary>
-        public ActionState(ActionType action, int to) { Action = action; To = to; }
+        public ActionState(ActionType action, int to, string stringProductionRule = null) { Action = action; To = to; StringProductionRule = stringProductionRule; }
+
+        public override int GetHashCode() => new { Action, To }.GetHashCode();
+        public override bool Equals(object other) => Equals(other as ActionState<ELang>);
+        public bool Equals(ActionState<ELang> other)
+        {
+            return other != null && Action.Equals(other.Action) && To == other.To;
+        }
     }
 
     public class ParserTable<ELang> where ELang : Enum

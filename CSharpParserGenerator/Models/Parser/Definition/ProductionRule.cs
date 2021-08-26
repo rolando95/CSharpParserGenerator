@@ -51,7 +51,7 @@ namespace CSharpParserGenerator
                 Nodes.Where(n => n.IsTerminal || n.IsNonTerminal)
                 .SequenceEqual(other.Nodes.Where(n => n.IsTerminal || n.IsNonTerminal));
 
-        public ProductionRule<ELang> GetProductionRuleWithPivotShifted()
+        public ProductionRule<ELang> GetProductionRuleWithShiftedPivot()
         {
             if (IsEnd) throw new InvalidOperationException("It is not possible to take a shift when you are already at the end of production");
 
