@@ -37,34 +37,27 @@ namespace CSharpParserGenerator
 
         public ParseResult<TResult> Parse<TResult>(string text)
         {
-            var lexerResult = Lexer.ProcessExpression(text);
             try
             {
-
-                if (!lexerResult.Success) throw new InvalidOperationException(lexerResult.ErrorMessage);
-
-                var syntaxTree = ProcessSyntax(lexerResult.Nodes);
+                var lexerNodes = Lexer.ParseLexerNodes(text);
+                var syntaxTree = ProcessSyntax(lexerNodes);
                 var result = ProcessSemantic(syntaxTree);
-                return new ParseResult<TResult>(lexerResult.Text, success: true, value: result);
+                return new ParseResult<TResult>(text, success: true, value: result);
             }
             catch (Exception e)
             {
                 var errors = new List<ErrorInfo>() { new ErrorInfo() { Type = e.GetType().Name, Description = e.Message } };
-                return new ParseResult<TResult>(lexerResult.Text, success: false, errors: errors);
+                return new ParseResult<TResult>(text, success: false, errors: errors);
             }
         }
 
         private SyntaxNode<ELang> ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)
         {
-            var lastLexerNode = lexerNodes.LastOrDefault();
-            var defaultNode = new LexerNode<ELang>(null, lastLexerNode != null? lastLexerNode.Position + lastLexerNode.Substring.Length : 0, Token<ELang>.EndToken, null);
-
-            var inputQueue = new Queue<LexerNode<ELang>>(lexerNodes.Append(defaultNode));
-            var nextNode = inputQueue.Dequeue();
-
+            var lexerNodesEnumerator = lexerNodes.GetEnumerator();
+            var nextNode = NextLexerNode(lexerNodesEnumerator);
             var currentState = RootState.Id;
-            var intialParserNode = new ParserStackNode<ELang>(defaultNode, currentState);
-            var parserStack = new List<ParserStackNode<ELang>>(inputQueue.Count) { intialParserNode };
+            var intialParserNode = new ParserStackNode<ELang>(LexerNode<ELang>.EndLexerNode(), currentState);
+            var parserStack = new List<ParserStackNode<ELang>>() { intialParserNode };
 
             var accept = false;
 
@@ -92,7 +85,7 @@ namespace CSharpParserGenerator
                         {
                             currentState = action.To;
                             parserStack.Add(new ParserStackNode<ELang>(nextNode, currentState));
-                            nextNode = inputQueue.Dequeue();
+                            nextNode = NextLexerNode(lexerNodesEnumerator);
                             break;
                         }
                     case ActionType.Goto:
@@ -160,6 +153,12 @@ namespace CSharpParserGenerator
             return node.ChildrenValues[0];
         }
 
+        private LexerNode<ELang> NextLexerNode(IEnumerator<LexerNode<ELang>> lexerNodesEnumerator)
+        {
+            lexerNodesEnumerator.MoveNext();
+            return lexerNodesEnumerator.Current;
+        }
+
         //
         // Given a production rule such as
         // 
@@ -195,7 +194,7 @@ namespace CSharpParserGenerator
                 }
             }
 
-            var productionNodes = productionRule.Nodes.Skip(1).SkipLast(1).ToList();
+            var productionNodes = productionRule.Nodes.Where(n => !n.IsEnd && !n.IsPivot).ToList();
 
             foreach (var node in parserNodes.Zip(productionNodes, (parser, prod) => new { Token = prod, parser.SyntaxNode, parser.Substring }))
             {

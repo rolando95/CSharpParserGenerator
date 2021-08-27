@@ -18,6 +18,8 @@ namespace CSharpParserGenerator
             Position = position;
         }
 
+        public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken, null);
+
         // Only to display in the debbuger
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public string StringToken => $"({Token.Symbol}) {Substring}";
@@ -34,7 +36,7 @@ namespace CSharpParserGenerator
         public LexerProcessExpressionResult(
             string text,
             bool success,
-            IEnumerable<LexerNode<ELang>> nodes = null,
+            List<LexerNode<ELang>> nodes = null,
             string errorMessage = null
         )
         {

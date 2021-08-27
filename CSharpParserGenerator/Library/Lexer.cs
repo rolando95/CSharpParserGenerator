@@ -13,15 +13,25 @@ namespace CSharpParserGenerator
 
         public Lexer(LexerDefinition<ELang> tokens, ELang ignoreToken = default)
         {
-            Tokens = tokens.MapTokenDefinitionEnumerable();
+            Tokens = tokens.Tokens;
             IgnoreToken = ignoreToken;
         }
 
         public LexerProcessExpressionResult<ELang> ProcessExpression(string text)
         {
+            try
+            {
+                return new LexerProcessExpressionResult<ELang>(text, true, nodes: ParseLexerNodes(text).ToList());
+            } catch(Exception e)
+            {
+                return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: e.Message);
+            }
+        }
+
+        public IEnumerable<LexerNode<ELang>> ParseLexerNodes(string text)
+        {
             int position = 0;
             string textRemaining = text ?? "";
-            var nodes = new List<LexerNode<ELang>>();
 
             while (textRemaining.Length > 0)
             {
@@ -33,7 +43,7 @@ namespace CSharpParserGenerator
 
                 if (match == null)
                 {
-                    return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: $"Invalid character \"{textRemaining[0]}\" at position {position}: {text}");
+                    throw new InvalidOperationException($"Invalid character \"{textRemaining[0]}\" at position {position}: {text}");
                 }
 
                 var matchLength = match.MatchLength;
@@ -43,10 +53,10 @@ namespace CSharpParserGenerator
                 textRemaining = textRemaining[matchLength..];
                 if (match.Definition.Token.Equals(IgnoreToken)) continue;
 
-                nodes.Add(new LexerNode<ELang>(substring, oldPosition, match.Definition.Token, match.Definition.Pattern));
+                yield return new LexerNode<ELang>(substring, oldPosition, match.Definition.Token, match.Definition.Pattern);
             }
 
-            return new LexerProcessExpressionResult<ELang>(text, true, nodes: nodes);
+            yield return LexerNode<ELang>.EndLexerNode(position);
         }
     }
 }
