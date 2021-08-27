@@ -1,2 +1,12 @@
 # CSharpParserGenerator
-CsharpSimpleParserGenerator is a tool that allows you to create SLR grammars. It includes a lexical and syntactic parser that can work at run time with native C# code, with no dependencies.
+
+CSharpSimpleParserGenerator is a tool that allows you to create SLR grammars. It includes a **lexical**, **syntactic** and **semantic** parser that can work at run time with native C# code.
+
+![Parser Diagram example](./Docs/ParserDiagramExample.svg)
+
+## Examples
+
+We recommend reviewing some of the examples available
+    
+* [Math Expression](./Examples/MathExpression) is a console project with the minimum settings for working with **CSharpParserGenerator**
+* [Dynamic Query](./Examples/DynamicQuery) is a sample of how to work with **CSharpParserGenerator** in real use with .Net Core; integrated with features of Entity Framework, Database, and Linq expressions.
