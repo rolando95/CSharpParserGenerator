@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace CSharpParserGenerator
@@ -52,7 +53,7 @@ namespace CSharpParserGenerator
         }
 
         // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
         public string StringToken
         {
             get

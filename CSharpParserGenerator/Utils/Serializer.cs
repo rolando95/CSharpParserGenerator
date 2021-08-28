@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Utils.Serialization
 {
+    [ExcludeFromCodeCoverage]
     public class RegexJsonSerializer : JsonConverter<Regex>
     {
         public override Regex Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

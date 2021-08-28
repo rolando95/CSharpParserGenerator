@@ -24,7 +24,7 @@ namespace CSharpParserGenerator
 
         public override int GetHashCode() => new { ProductionRules }.GetHashCode();
         public override bool Equals(object o) => Equals(o as State<ELang>);
-        public bool Contains(ProductionRule<ELang> productionRule) => ProductionRules.Contains(productionRule);
+        public bool Contains(IEnumerable<ProductionRule<ELang>> other) => other.All(p => ProductionRules.Contains(p));
 
     }
 }

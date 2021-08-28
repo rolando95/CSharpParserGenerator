@@ -13,29 +13,35 @@ namespace CSharpParserGenerator
 
         public List<ErrorInfo> Errors { get; }
 
-        public ParseResult(string text, bool success = false, dynamic value = null, List<ErrorInfo> errors = null)
+        public ParseResult(string text, bool success = false, object value = null, List<ErrorInfo> errors = null)
         {
             Text = text;
             Success = success;
             Errors = errors ?? new List<ErrorInfo>();
+            Value = GetValue(value);
+        }
 
-            var vType = value?.GetType();
-            var tType = typeof(T);
+        private Type GetNonNullableType(Type type)
+        {
+            return Nullable.GetUnderlyingType(type) ?? type;
+        }
 
-            if (tType.Equals(typeof(object)) || tType.Equals(vType))
-            {
-                Value = (T)value;
-                return;
-            }
+        private T GetValue(object value)
+        {
+            var vType = value?.GetType().Name ?? "null";
+            var tType = GetNonNullableType(typeof(T));
 
             try
             {
-                if (value != null) Value = Convert.ChangeType(value, tType);
+                if (value != null) return (T)Convert.ChangeType(value, tType);
             }
             catch
             {
-                throw new InvalidOperationException($"Invalid ParseResult value type: expected {typeof(T).Name}, received {value.GetType().Name}. Value: {value}");
+
+                throw new InvalidOperationException($"Invalid ParseResult value type: expected {typeof(T).Name}, received {vType}. Value: {value}");
             }
+
+            return default;
         }
     }
 

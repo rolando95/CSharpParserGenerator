@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CSharpParserGenerator
 {
@@ -25,7 +25,7 @@ namespace CSharpParserGenerator
         }
 
         // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
         public new string StringToken => $"{Token.StringToken}{ (Substring != null ? $" - {Substring.ToString()}" : null) }";
     }
 }

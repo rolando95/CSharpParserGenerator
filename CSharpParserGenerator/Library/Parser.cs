@@ -37,18 +37,19 @@ namespace CSharpParserGenerator
 
         public ParseResult<TResult> Parse<TResult>(string text)
         {
+            dynamic result;
             try
             {
                 var lexerNodes = Lexer.ParseLexerNodes(text);
                 var syntaxTree = ProcessSyntax(lexerNodes);
-                var result = ProcessSemantic(syntaxTree);
-                return new ParseResult<TResult>(text, success: true, value: result);
+                result = ProcessSemantic(syntaxTree);
             }
             catch (Exception e)
             {
                 var errors = new List<ErrorInfo>() { new ErrorInfo() { Type = e.GetType().Name, Description = e.Message } };
                 return new ParseResult<TResult>(text, success: false, errors: errors);
             }
+            return new ParseResult<TResult>(text, success: true, value: result);
         }
 
         private SyntaxNode<ELang> ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)

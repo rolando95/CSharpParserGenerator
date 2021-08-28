@@ -31,9 +31,9 @@ namespace MathExpression
 
         public enum ELang
         {
-            Expression, Addition, Exponentiation, Multiplication, Term,
+            A, E, M, T,
 
-            Ignore, Pow, Mul, Sub, Plus, Div, LPar, RPar, Property
+            Ignore, Pow, Mul, Sub, Plus, Div, LParenthesis, RParenthesis, Number
         }
 
         public static Parser<ELang> CompileParser()
@@ -41,43 +41,53 @@ namespace MathExpression
             var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
                 [ELang.Ignore] = "[ \\n]+",
-                [ELang.LPar] = "\\(",
-                [ELang.RPar] = "\\)",
+                [ELang.LParenthesis] = "\\(",
+                [ELang.RParenthesis] = "\\)",
                 [ELang.Plus] = "\\+",
                 [ELang.Pow] = "(\\*\\*|\\^)",
                 [ELang.Mul] = "\\*",
                 [ELang.Div] = "/",
                 [ELang.Sub] = "-",
-                [ELang.Property] = "[-+]?\\d*(\\.\\d+)?",
+                [ELang.Number] = "[-+]?\\d*(\\.\\d+)?",
             });
 
+            // A' -> A
+            // A -> A + M
+            // A -> A - M
+            // A -> M
+            // 
+            // M -> M * E
+            // M -> M / E
+            // M -> E
+            // 
+            // E -> E ^ T
+            // E -> T
+            // 
+            // T -> ( A )
+            // T -> number
             var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
             {
-                [ELang.Expression] = new DefinitionRules
+                [ELang.A] = new DefinitionRules
                     {
-                        new List<Token> { ELang.Addition }
+                        new List<Token> { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] = o[1] + o[3]; }) },
+                        new List<Token> { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] = o[1] - o[3]; }) },
+                        new List<Token> { ELang.M }
                     },
-                [ELang.Addition] = new DefinitionRules
+                [ELang.M] = new DefinitionRules
                     {
-                        new List<Token> { ELang.Addition, ELang.Plus, ELang.Multiplication, new Op(o => { o[0] = o[1] + o[3]; }) },
-                        new List<Token> { ELang.Addition, ELang.Sub, ELang.Multiplication, new Op(o => { o[0] = o[1] - o[3]; }) },
-                        new List<Token> { ELang.Multiplication }
+                        new List<Token> { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] = o[1] * o[3]; }) },
+                        new List<Token> { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] = o[1] / o[3]; }) },
+                        new List<Token> { ELang.E }
                     },
-                [ELang.Multiplication] = new DefinitionRules
+                [ELang.E] = new DefinitionRules
                     {
-                        new List<Token> { ELang.Multiplication, ELang.Mul, ELang.Exponentiation, new Op(o => { o[0] = o[1] * o[3]; }) },
-                        new List<Token> { ELang.Multiplication, ELang.Div, ELang.Exponentiation, new Op(o => { o[0] = o[1] / o[3]; }) },
-                        new List<Token> { ELang.Exponentiation }
+                        new List<Token> { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[1], o[3]); }) },
+                        new List<Token> { ELang.T }
                     },
-                [ELang.Exponentiation] = new DefinitionRules
+                [ELang.T] = new DefinitionRules
                     {
-                        new List<Token> { ELang.Exponentiation, ELang.Pow, ELang.Term, new Op(o => { o[0] = Math.Pow(o[1], o[3]); }) },
-                        new List<Token> { ELang.Term }
-                    },
-                [ELang.Term] = new DefinitionRules
-                    {
-                        new List<Token> { ELang.LPar, ELang.Addition, ELang.RPar, new Op(o => {o[0] = o[2]; }) },
-                        new List<Token> { ELang.Property, new Op(o => { o[0] = Convert.ToDouble(o[1]); }) }
+                        new List<Token> { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => {o[0] = o[2]; }) },
+                        new List<Token> { ELang.Number, new Op(o => { o[0] = Convert.ToDouble(o[1]); }) }
                     }
             });
 

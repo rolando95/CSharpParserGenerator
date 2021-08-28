@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 
@@ -21,13 +22,12 @@ namespace CSharpParserGenerator
         public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken, null);
 
         // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
         public string StringToken => $"({Token.Symbol}) {Substring}";
     }
 
     public class LexerProcessExpressionResult<ELang> where ELang : Enum
     {
-
         public string Text { get; }
         public bool Success { get; }
         public IEnumerable<LexerNode<ELang>> Nodes { get; }
