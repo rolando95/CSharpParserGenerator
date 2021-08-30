@@ -1,34 +1,26 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Extensions;
-using Utils.Sequence;
 
 namespace CSharpParserGenerator
 {
     [DebuggerDisplay("{StringProductionRule}")]
     public class ProductionRule<ELang> : IEquatable<ProductionRule<ELang>> where ELang : Enum
     {
-        /// <summary>
-        /// Gets the number of nodes that the production contains ignoring the pivot and end
-        /// </summary>
-        public int Count { get; }
-
-        // /// <summary>
-        // /// Get nodes idx ignoring the pivot and end
-        // /// </summary>
-        // /// 
-        // public Token<ELang> this[int idx] => Nodes.Where(n => n.IsTerminal || n.IsNonTerminal).ToList()[idx];
-
+        private int PivotIdx { get; }
         public Guid Id { get; }
         public Token<ELang> Head { get; }
         public List<Token<ELang>> Nodes { get; }
         public Token<ELang> CurrentNode { get; }
         public bool IsEnd { get; }
+        public bool IsFirst => PivotIdx == 0;
+        public bool IsEmpty => IsFirst && IsEnd;
         public State<ELang> NextState { get; set; }
-        private int PivotIdx { get; }
+
+        public Op Operation { get; }
+        public int ShiftPointerIdxOnReduce { get; }
 
         public override bool Equals(object other) => Equals(other as ProductionRule<ELang>);
         public override int GetHashCode() => new { Head, Nodes }.GetHashCode();
@@ -58,10 +50,10 @@ namespace CSharpParserGenerator
             var nodesWithShiftedPivot = Nodes.Copy();
             nodesWithShiftedPivot.Swap(PivotIdx, PivotIdx + 1);
 
-            return new ProductionRule<ELang>(Head, nodesWithShiftedPivot);
+            return new ProductionRule<ELang>(Head, nodesWithShiftedPivot, Operation, ShiftPointerIdxOnReduce);
         }
 
-        public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes)
+        public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes, Op operation = null, int shiftPointerIdxOnReduce = 0)
         {
             Id = Guid.NewGuid();
             Head = head;
@@ -69,8 +61,8 @@ namespace CSharpParserGenerator
             Nodes = nodes.ToList();
             PivotIdx = Nodes.FindIndex(n => n.IsPivot);
 
-            var pivotNode = Token<ELang>.PivotToken;
-            var endNode = Token<ELang>.EndToken;
+            var pivotNode = Token<ELang>.PivotToken();
+            var endNode = Token<ELang>.EndToken();
 
             if (PivotIdx < 0)
             {
@@ -85,7 +77,8 @@ namespace CSharpParserGenerator
 
             CurrentNode = Nodes[PivotIdx + 1];
             IsEnd = CurrentNode.Equals(endNode);
-            Count = Nodes.Count - 2;
+            Operation = operation;
+            ShiftPointerIdxOnReduce = shiftPointerIdxOnReduce;
         }
 
         // Only to display in the debbuger
@@ -94,14 +87,9 @@ namespace CSharpParserGenerator
         {
             get
             {
-                var head = Head.IsRoot ? "Root" : Head.Symbol.ToString();
-                var strNodes = Nodes.Select(n =>
-                    (n.IsNonTerminal || n.IsTerminal) ? $"{n.Symbol.ToString()}{(n.HasOperations ? "*" : "")}"
-                    : n.IsPivot ? "."
-                    : n.IsEnd ? "$"
-                    : "UNKNOWN"
-                );
-                return $"{head} -> {string.Join(" ", strNodes)}".Replace(". ", ".");
+                var operation = Operation != null ? "(op)" : "";
+                var strNodes = Nodes.SkipLast(1).Select(n => n.IsPivot || n.IsEnd ? n.StringToken : $"{n.StringToken} ");
+                return $"{Head.StringToken} -> {string.Join(" ", strNodes)} {operation}$";
             }
         }
     }

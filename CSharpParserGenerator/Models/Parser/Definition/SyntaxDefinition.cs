@@ -19,39 +19,51 @@ namespace CSharpParserGenerator
 
         private List<ProductionRule<ELang>> MapProductionRuleEnumerable(Dictionary<ELang, DefinitionRules> dictionary)
         {
-            var rulesList = dictionary.Keys.Distinct().ToList();
+            var nonTerminalEnums = dictionary.Keys.Distinct().ToList();
+            var firstNonTerminalToken = new Token<ELang>(ETokenTypes.NonTerminal, nonTerminalEnums.FirstOrDefault());
+
+            var rules = new List<ProductionRule<ELang>>() { new ProductionRule<ELang>(Token<ELang>.RootToken(), new List<Token<ELang>>() { firstNonTerminalToken }) };
+
             var definitionRules = dictionary
                 .AsEnumerable()
-                .SelectMany(pair => pair.Value, (pair, pairValue) => new { Rule = pair.Key, Nodes = pairValue });
+                .SelectMany(pair => pair.Value, (pair, pairValue) => new { Head = pair.Key, Nodes = pairValue })
+                .ToList();
 
-            var rules = new List<ProductionRule<ELang>>();
             foreach (var definitionRule in definitionRules)
             {
-                var nodes = new List<Token<ELang>>() { Token<ELang>.PivotToken };
+                var nodes = Enumerable.Empty<Token<ELang>>();
                 var definitionNodes = definitionRule.Nodes;
 
+                Op operation = null;
+
+                var idx = -1;
                 foreach (var definitionNode in definitionNodes)
                 {
-                    if (definitionNode.Type == ETokenTypes.Operation)
+                    ++idx;
+                    if (definitionNode.Op != null)
                     {
-                        var last = nodes.Last();
+                        // Semantic action at end
+                        if (definitionNode == definitionNodes.Last())
+                        {
+                            operation = definitionNode.Op;
+                            continue;
+                        }
 
-                        if (last.HasOperations) last.Operations.AddRange(definitionNode.Operations);
-                        else last.Operations = definitionNode.Operations;
-
+                        // Semantic action at middle
+                        var anonymous = Token<ELang>.AnonymousNonTerminalToken();
+                        nodes = nodes.Append(anonymous);
+                        rules.Add(new ProductionRule<ELang>(anonymous, new List<Token<ELang>>(), definitionNode.Op, -idx));
                         continue;
                     }
 
-                    var type = rulesList.Contains((ELang)definitionNode.Symbol) ? ETokenTypes.NonTerminal : ETokenTypes.Terminal;
-                    nodes.Add(new Token<ELang>((ELang)definitionNode.Symbol, definitionNode.Operations, type));
+                    var symbol = (ELang)Enum.ToObject(typeof(ELang), definitionNode.Symbol);
+                    var type = nonTerminalEnums.Contains(symbol) ? ETokenTypes.NonTerminal : ETokenTypes.Terminal;
+                    nodes = nodes.Append(new Token<ELang>(type, symbol));
                 }
 
-                var rule = new Token<ELang>((ELang)definitionRule.Rule, type: ETokenTypes.NonTerminal);
-                rules.Add(new ProductionRule<ELang>(rule, nodes));
+                var head = new Token<ELang>(ETokenTypes.NonTerminal, definitionRule.Head);
+                rules.Add(new ProductionRule<ELang>(head, nodes, operation));
             }
-
-            var root = new ProductionRule<ELang>(Token<ELang>.RootToken, new List<Token<ELang>>() { rules.FirstOrDefault()?.Head });
-            rules.Insert(0, root);
             return rules;
         }
     }

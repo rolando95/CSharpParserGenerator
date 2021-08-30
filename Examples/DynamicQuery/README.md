@@ -236,16 +236,16 @@ And that's it! After defining the rules of the parser and having an instance it 
             new List<Token> { ELang.Number, ELang.Add, ELang.Number },
         }
     ```
-    - It can be read as _"Addition produces Number Add Number"_. For **CSharpParserGenerator**, this translates to a single **List** where the first element ```[0]``` is the non-terminal of production rule _(Addition)_ and the other positions are _Number_ ```[1]```, _Add_ ```[2]```, and _Number_ ```[3]```. If we expect to raise the result of that sum in the tree, having clear the initial values of the List, we can infer that the operation would be ```o[0] = o[1] + o[3]```.
+    - It can be read as _"The addition produces number add number"_. For **CSharpParserGenerator**, this translates into a single **List** where positions are _Number_ ```[0]```, _Add_ ```[1]``` and _Number_ ```[2]```. In each production rule the resulting value of position 0 is raised to the tree, therefore the semantic action should operate on the numbers and assign the result to position 0 before rising.
     - In CSharpParserGenerator, you can create a semantic operation with an instance with the ```Op``` class. For the sum production rule mentioned, it can be written as follows:
     ```C#
-        new Op(o => { o[0] = o[1] + o[3]; })
+        new Op(o => { o[0] = o[0] + o[2]; })
     ```
     - The output of the production rule with the semantic operation in CSharpParserGenerator would be as follows:
     ```C#
         [ELang.Addition] = new DefinitionRules
         {
-            new List<Token> { ELang.Number, ELang.Add, ELang.Number, new Op(o => { o[0] = o[1] + o[3]; }) },
+            new List<Token> { ELang.Number, ELang.Add, ELang.Number, new Op(o => { o[0] = o[0] + o[2]; }) },
         }
     ```
     - As you can see, just write the operation at the end of the production rule. Now let's continue with the example of the Dynamic Parser...
@@ -278,9 +278,9 @@ And that's it! After defining the rules of the parser and having an instance it 
     new Op(
         o => o[0] = new MyExpressionTree() 
         { 
-            Property = o[1], 
+            Property = o[0], 
             Operation = ELang.Eq, 
-            Value = o[3] 
+            Value = o[2] 
         }
     )
 ```
@@ -292,9 +292,9 @@ And that's it! After defining the rules of the parser and having an instance it 
             ELang.Property, ELang.Eq, ELang.Term, 
             new Op(o => o[0] = new MyExpressionTree() 
             { 
-                Property = o[1], 
+                Property = o[0], 
                 Operation = ELang.Eq, 
-                Value = o[3] 
+                Value = o[2] 
             }) 
         }
     }

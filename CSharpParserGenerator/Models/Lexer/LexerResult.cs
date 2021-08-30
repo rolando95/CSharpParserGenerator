@@ -19,7 +19,7 @@ namespace CSharpParserGenerator
             Position = position;
         }
 
-        public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken, null);
+        public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken(), null);
 
         // Only to display in the debbuger
         [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]

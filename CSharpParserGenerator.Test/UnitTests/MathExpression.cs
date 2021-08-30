@@ -108,39 +108,36 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
             // A -> A + M
             // A -> A - M
             // A -> M
-            // 
             // M -> M * E
             // M -> M / E
             // M -> E
-            // 
             // E -> E ^ T
             // E -> T
-            // 
             // T -> ( A )
             // T -> number
             var rules = new SyntaxDefinition<EMathLang>(new Dictionary<EMathLang, DefinitionRules>()
             {
                 [EMathLang.A] = new DefinitionRules
                     {
-                        new List<Token> { EMathLang.A, EMathLang.Plus, EMathLang.M, new Op(o => { o[0] = o[1] + o[3]; }) },
-                        new List<Token> { EMathLang.A, EMathLang.Sub, EMathLang.M, new Op(o => { o[0] = o[1] - o[3]; }) },
+                        new List<Token> { EMathLang.A, EMathLang.Plus, EMathLang.M, new Op(o => { o[0] += o[2]; }) },
+                        new List<Token> { EMathLang.A, EMathLang.Sub, EMathLang.M, new Op(o => { o[0] -= o[2]; }) },
                         new List<Token> { EMathLang.M }
                     },
                 [EMathLang.M] = new DefinitionRules
                     {
-                        new List<Token> { EMathLang.M, EMathLang.Mul, EMathLang.E, new Op(o => { o[0] = o[1] * o[3]; }) },
-                        new List<Token> { EMathLang.M, EMathLang.Div, EMathLang.E, new Op(o => { o[0] = o[1] / o[3]; }) },
+                        new List<Token> { EMathLang.M, EMathLang.Mul, EMathLang.E, new Op(o => { o[0] *= o[2]; }) },
+                        new List<Token> { EMathLang.M, EMathLang.Div, EMathLang.E, new Op(o => { o[0] /= o[2]; }) },
                         new List<Token> { EMathLang.E }
                     },
                 [EMathLang.E] = new DefinitionRules
                     {
-                        new List<Token> { EMathLang.E, EMathLang.Pow, EMathLang.T, new Op(o => { o[0] = Math.Pow(o[1], o[3]); }) },
+                        new List<Token> { EMathLang.E, EMathLang.Pow, EMathLang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
                         new List<Token> { EMathLang.T }
                     },
                 [EMathLang.T] = new DefinitionRules
                     {
-                        new List<Token> { EMathLang.LParenthesis, EMathLang.A, EMathLang.RParenthesis, new Op(o => {o[0] = o[2]; }) },
-                        new List<Token> { EMathLang.Number, new Op(o => o[0] = Convert.ToDouble(o[1])) }
+                        new List<Token> { EMathLang.LParenthesis, EMathLang.A, EMathLang.RParenthesis, new Op(o => {o[0] = o[1]; }) },
+                        new List<Token> { EMathLang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
                     }
             });
 
