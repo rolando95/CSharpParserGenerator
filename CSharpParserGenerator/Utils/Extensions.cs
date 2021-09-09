@@ -16,12 +16,5 @@ namespace Utils.Extensions
         {
             return list.Select(l => l).ToList();
         }
-
-        public static List<T> PopRange<T>(this List<T> list, int count)
-        {
-            var result = list.GetRange(list.Count - count, count);
-            list.RemoveRange(list.Count - count, count);
-            return result;
-        }
     }
 }

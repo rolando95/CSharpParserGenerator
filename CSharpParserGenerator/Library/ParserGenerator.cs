@@ -84,9 +84,9 @@ namespace CSharpParserGenerator
             var follows = Enumerable.Empty<Token<ELang>>();
 
             // Root token places $ symbol
-            if (nonTerminalToken.Equals(Token<ELang>.RootToken))
+            if (nonTerminalToken.Equals(Token<ELang>.RootToken()))
             {
-                follows = follows.Append(Token<ELang>.EndToken);
+                follows = follows.Append(Token<ELang>.EndToken());
             }
 
             foreach (var productionRule in ProductionRules)
@@ -230,7 +230,7 @@ namespace CSharpParserGenerator
                 {
                     var rule = productionRule.Head;
                     var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(productionRule));
-                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx, productionRule.StringProductionRule);
+                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx, productionRule);
 
                     foreach (var token in follows[rule])
                     {
@@ -251,7 +251,7 @@ namespace CSharpParserGenerator
                 // Goto / Shift
                 {
                     var actionType = productionNode.IsNonTerminal ? ActionType.Goto : ActionType.Shift;
-                    var actionState = new ActionState<ELang>(actionType, productionRule.NextState.Id, productionRule.StringProductionRule);
+                    var actionState = new ActionState<ELang>(actionType, productionRule.NextState.Id, productionRule);
 
                     // Check conflicts
                     var currentActionState = parserTable[currentStateId, productionNode];
@@ -276,8 +276,8 @@ namespace CSharpParserGenerator
             return new InvalidOperationException(
     @$"Conflict detected. Possible {a.Action.ToString()}/{b.Action.ToString()} operations
     To solve this conflict, refactor production rules: 
-    {a.StringProductionRule}
-    {b.StringProductionRule}"
+    {a.ProductionRule.StringProductionRule}
+    {b.ProductionRule.StringProductionRule}"
             );
         }
     }

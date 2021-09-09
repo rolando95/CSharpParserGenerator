@@ -69,25 +69,25 @@ namespace MathExpression
             {
                 [ELang.A] = new DefinitionRules
                     {
-                        new List<Token> { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] = o[1] + o[3]; }) },
-                        new List<Token> { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] = o[1] - o[3]; }) },
+                        new List<Token> { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] += o[2]; }) },
+                        new List<Token> { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] -= o[2]; }) },
                         new List<Token> { ELang.M }
                     },
                 [ELang.M] = new DefinitionRules
                     {
-                        new List<Token> { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] = o[1] * o[3]; }) },
-                        new List<Token> { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] = o[1] / o[3]; }) },
+                        new List<Token> { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] *= o[2]; }) },
+                        new List<Token> { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] /= o[2]; }) },
                         new List<Token> { ELang.E }
                     },
                 [ELang.E] = new DefinitionRules
                     {
-                        new List<Token> { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[1], o[3]); }) },
+                        new List<Token> { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
                         new List<Token> { ELang.T }
                     },
                 [ELang.T] = new DefinitionRules
                     {
-                        new List<Token> { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => {o[0] = o[2]; }) },
-                        new List<Token> { ELang.Number, new Op(o => { o[0] = Convert.ToDouble(o[1]); }) }
+                        new List<Token> { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => {o[0] = o[1]; }) },
+                        new List<Token> { ELang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
                     }
             });
 

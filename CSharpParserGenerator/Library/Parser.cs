@@ -37,12 +37,11 @@ namespace CSharpParserGenerator
 
         public ParseResult<TResult> Parse<TResult>(string text)
         {
-            dynamic result;
+            object result;
             try
             {
                 var lexerNodes = Lexer.ParseLexerNodes(text);
-                var syntaxTree = ProcessSyntax(lexerNodes);
-                result = ProcessSemantic(syntaxTree);
+                result = ProcessSyntax(lexerNodes);
             }
             catch (Exception e)
             {
@@ -52,174 +51,70 @@ namespace CSharpParserGenerator
             return new ParseResult<TResult>(text, success: true, value: result);
         }
 
-        private SyntaxNode<ELang> ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)
+        private object ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)
         {
+            object result = null;
             var lexerNodesEnumerator = lexerNodes.GetEnumerator();
-            var nextNode = NextLexerNode(lexerNodesEnumerator);
+
+            var currentNode = NextLexerNode(lexerNodesEnumerator);
+            var currentToken = currentNode.Token;
             var currentState = RootState.Id;
-            var intialParserNode = new ParserStackNode<ELang>(LexerNode<ELang>.EndLexerNode(), currentState);
-            var parserStack = new List<ParserStackNode<ELang>>() { intialParserNode };
+            var parserStack = new ParserStack(RootState.Id);
 
             var accept = false;
 
             do
             {
 
-                var action = ParserTable.GetAction(currentState, nextNode.Token);
+                var action = ParserTable.GetAction(currentState, currentToken);
 
                 if (action == null)
                 {
-                    var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(parserStack.Last().StateId).Select(t => t.IsEnd ? "EOF" : t.Symbol.ToString());
-                    throw new InvalidOperationException($"Syntax error: Invalid value \"{nextNode.Substring}\" at position {nextNode.Position}. Any of these tokens were expected: {string.Join(", ", availableTokens)}");
+                    var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(currentState).Select(t => t.IsEnd ? "EOF" : t.Symbol.ToString());
+                    throw new InvalidOperationException($"Syntax error: Invalid value \"{currentNode.Substring}\" at position {currentNode.Position}. Any of these tokens were expected: {string.Join(", ", availableTokens)}");
                 }
 
                 switch (action.Action)
                 {
                     case ActionType.Accept:
                         {
-                            if (parserStack.Count() != 2) throw new InvalidOperationException("Internal Error: Unknown error");
-                            intialParserNode.SyntaxNode = parserStack.Last().SyntaxNode;
+                            result = parserStack.CurrentValue;
                             accept = true;
                             break;
                         }
                     case ActionType.Shift:
                         {
-                            currentState = action.To;
-                            parserStack.Add(new ParserStackNode<ELang>(nextNode, currentState));
-                            nextNode = NextLexerNode(lexerNodesEnumerator);
+                            parserStack.Shift(currentNode, action);
+                            currentNode = NextLexerNode(lexerNodesEnumerator);
+                            currentToken = currentNode.Token;
+                            currentState = parserStack.CurrentState;
                             break;
                         }
                     case ActionType.Goto:
                         {
-                            currentState = action.To;
+                            parserStack.Goto(action);
+                            currentState = parserStack.CurrentState;
+                            currentToken = currentNode.Token;
                             break;
                         }
                     case ActionType.Reduce:
                         {
-                            var productionRule = ProductionRules[action.To];
-                            var parserNodes = parserStack.PopRange(productionRule.Count);
-                            currentState = ParserTable.GetAction(parserStack.Last().StateId, productionRule.Head).To;
-
-                            var syntaxNode = GetSyntaxNode(productionRule, parserNodes);
-
-                            parserStack.Add(new ParserStackNode<ELang>
-                            (
-                                productionRule.Head,
-                                syntaxNode,
-                                currentState,
-                                parserNodes.LastOrDefault()?.Position ?? 0
-                            ));
+                            parserStack.Reduce(action, ProductionRules);
+                            currentToken = action.ProductionRule.Head;
+                            currentState = parserStack.CurrentState;
                             break;
                         }
                 }
 
             } while (!accept);
-            return intialParserNode.SyntaxNode;
+            return result;
 
-        }
-
-        private object ProcessSemantic(SyntaxNode<ELang> node)
-        {
-            if (node.Token.IsTerminal) return node.ChildrenValues[0];
-
-            bool childrenOperations = false;
-
-            for (var i = 1; i < node.Children.Count(); ++i)
-            {
-                var data = node.ChildrenValues[i];
-                var token = node.Children[i];
-
-                switch (token.Type)
-                {
-                    case ETokenTypes.Operation:
-                        {
-                            (data as Op).Callback(node.ChildrenValues);
-                            childrenOperations = true;
-                        }
-                        break;
-                    case ETokenTypes.NonTerminal:
-                        {
-                            var child = (data as SyntaxNode<ELang>);
-                            node.ChildrenValues[i] = ProcessSemantic(child);
-                        }
-                        break;
-                }
-            }
-
-            if (!childrenOperations && node.Children.Count() > 1)
-            {
-                node.ChildrenValues[0] = node.ChildrenValues[1];
-            }
-
-            return node.ChildrenValues[0];
         }
 
         private LexerNode<ELang> NextLexerNode(IEnumerator<LexerNode<ELang>> lexerNodesEnumerator)
         {
             lexerNodesEnumerator.MoveNext();
             return lexerNodesEnumerator.Current;
-        }
-
-        //
-        // Given a production rule such as
-        // 
-        //     E -> . (op) a + b (op) $ 
-        //
-        // and a parserNodes as
-        // 
-        //     "10" "+" "20"
-        //     
-        // The following will return:
-        //      ________________________________________________  
-        //    / SyntaxNode                                      \
-        //   |                                                  | 
-        //   | Token          : E                               |
-        //   | children       : [E, op, a, +, b, op]            |
-        //   | childrenValues : [nul, op, "10", "+", "20", op]  |
-        //   |  	                                            |
-        //    \_________________________________________________/ 
-        //
-        private SyntaxNode<ELang> GetSyntaxNode(ProductionRule<ELang> productionRule, List<ParserStackNode<ELang>> parserNodes)
-        {
-
-            var childrenValues = Enumerable.Empty<object>();
-            var children = Enumerable.Empty<Token<ELang>>();
-
-            var pivotNode = productionRule.Nodes.First();
-            if (pivotNode.HasOperations)
-            {
-                foreach (var operation in pivotNode.Operations)
-                {
-                    childrenValues = childrenValues.Append(operation);
-                    children = children.Append(Token<ELang>.Operation);
-                }
-            }
-
-            var productionNodes = productionRule.Nodes.Where(n => !n.IsEnd && !n.IsPivot).ToList();
-
-            foreach (var node in parserNodes.Zip(productionNodes, (parser, prod) => new { Token = prod, parser.SyntaxNode, parser.Substring }))
-            {
-
-                switch (node.Token.Type)
-                {
-                    case ETokenTypes.NonTerminal: { childrenValues = childrenValues.Append(node.SyntaxNode); } break;
-                    case ETokenTypes.Terminal: { childrenValues = childrenValues.Append(node.Substring); } break;
-                    default: throw new InvalidOperationException("Internal Error: Unknown error");
-                }
-
-                children = children.Append(node.Token);
-
-                if (node.Token.HasOperations)
-                {
-                    foreach (var operation in node.Token.Operations)
-                    {
-                        childrenValues = childrenValues.Append(operation);
-                        children = children.Append(Token<ELang>.Operation);
-                    }
-                }
-            }
-
-            return new SyntaxNode<ELang>(productionRule.Head, childrenValues.Prepend(null).ToArray(), children.Prepend(productionRule.Head).ToArray());
         }
     }
 }

@@ -32,13 +32,14 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
         [InlineData("a b c d e ; ", new[] { "a", "b", "c", "d1", "e", ";" })]
         [InlineData("a c d d d d ; ", new[] { "a", "!b", "c", "d4", "!e", ";" })]
         [InlineData("a b e ; a d d d ; ", new[] { "a", "b", "!c", "d0", "e", ";", "a", "!b", "!c", "d3", "!e", ";" })]
+        [InlineData("a ; a e ; ", new[] { "a", "!b", "!c", "d0", "!e", ";", "a", "!b", "!c", "d0", "e", ";" })]
         public void ParserTests(string input, string[] expected)
         {
             var parser = CompileParser();
             var result = parser.Parse<string[]>(input);
 
             Assert.True(result.Success);
-            Assert.True(result.Value.SequenceEqual(expected));
+            Assert.Equal(expected, result.Value);
         }
 
         private Parser<ELang> CompileParser()
@@ -58,35 +59,30 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
             // R -> S
             // S -> A S
             // S -> A
-            //
             // A -> a B C D E ;
-            // A -> a B D E;
-            //
+            // A -> a B D E ;
             // B -> b
             // B ->
-            // 
             // C -> c
-            //
             // D -> d D
             // D ->
-            //
             // E -> e
             // E ->
             var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
             {
                 [ELang.R] = new DefinitionRules
                 {
-                    new List<Token> { ELang.S, new Op(o => o[0] = (o[1] as IEnumerable<string>).ToArray()) }
+                    new List<Token> { ELang.S, new Op(o => o[0] = (o[0] as IEnumerable<string>).ToArray()) }
                 },
                 [ELang.S] = new DefinitionRules
                 {
-                    new List<Token> { ELang.A, ELang.S, new Op(o => o[0] = ConcatItems(o[1], o[2])) },
+                    new List<Token> { ELang.A, ELang.S, new Op(o => o[0] = ConcatItems(o[0], o[1])) },
                     new List<Token> { ELang.A }
                 },
                 [ELang.A] = new DefinitionRules
                 {
-                    new List<Token> { ELang.a, ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[2], o[3], $"d{o[4]}", o[5], ";")) },
-                    new List<Token> { ELang.a, ELang.B, new Op(o => o[3] = "!c" ), ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[2], o[3], $"d{o[4]}", o[5], ";")) }
+                    new List<Token> { ELang.a, ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[1], o[2], $"d{o[3]}", o[4], ";")) },
+                    new List<Token> { ELang.a, ELang.B, new Op(o => o[2] = "!c"), ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[1], o[2], $"d{o[3]}", o[4], ";")) }
                 },
                 [ELang.B] = new DefinitionRules
                 {
@@ -99,7 +95,7 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
                 },
                 [ELang.D] = new DefinitionRules
                 {
-                    new List<Token> { ELang.d, ELang.D, new Op(o => o[0] = 1 + o[2] ) },
+                    new List<Token> { ELang.d, ELang.D, new Op(o => o[0] = 1 + o[1] ) },
                     new List<Token> { new Op(o => o[0] = 0 ) }
                 },
                 [ELang.E] = new DefinitionRules

@@ -1,24 +1,22 @@
 using System;
-using System.Collections.Generic;
-
 namespace CSharpParserGenerator
 {
     public class Op
     {
-        Func<dynamic[], dynamic> @Func;
-        Action<dynamic[]> @Action;
+        Func<ParserStack, dynamic> @Func;
+        Action<ParserStack> @Action;
 
-        public Op(Func<dynamic[], dynamic> func)
+        public Op(Func<ParserStack, dynamic> func)
         {
             @Func = func;
         }
 
-        public Op(Action<dynamic[]> action)
+        public Op(Action<ParserStack> action)
         {
             @Action = action;
         }
 
-        public void Callback(dynamic[] args)
+        public void Callback(ParserStack args)
         {
             if (Func != null) { @Func(args); return; }
             if (Action != null) { @Action(args); return; }
