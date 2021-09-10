@@ -16,7 +16,7 @@ namespace CSharpParserGenerator
     }
 
     [DebuggerDisplay("{StringToken}")]
-    public class Token<ELang> : IEquatable<Token<ELang>> where ELang : Enum
+    public class Token<ELang> : IComparable<Token<ELang>>, IEquatable<Token<ELang>> where ELang : Enum
     {
         public static Token<ELang> RootToken() => new Token<ELang>(type: ETokenTypes.Root);
         public static Token<ELang> PivotToken() => new Token<ELang>(type: ETokenTypes.Pivot);
@@ -51,6 +51,13 @@ namespace CSharpParserGenerator
 
             Type = type;
 
+        }
+
+        public int CompareTo(Token<ELang> other)
+        {
+            if (other == null) return 1;
+            if (Type == other.Type) return Symbol.CompareTo(other.Symbol);
+            return Convert.ToInt32(Type).CompareTo(Convert.ToInt32(other.Type));
         }
 
 

@@ -20,7 +20,9 @@ namespace CSharpParserGenerator
         public Parser<ELang> CompileParser()
         {
             var states = new List<State<ELang>>();
-            var rootProductionRules = GetProductionRulesFromNonTerminal(ProductionRules.First().Head);
+            var rootProductionRules = GetProductionRulesFromNonTerminal(ProductionRules.First())
+                                        .Prepend(ProductionRules.First())
+                                        .ToList();
 
             var follows = new Dictionary<Token<ELang>, List<Token<ELang>>>();
             var firsts = new Dictionary<Token<ELang>, List<Token<ELang>>>();
@@ -141,9 +143,10 @@ namespace CSharpParserGenerator
             return follows.Distinct().ToList();
         }
 
-        private List<ProductionRule<ELang>> GetProductionRulesFromNonTerminal(Token<ELang> nonTerminalToken, List<Token<ELang>> tokensAlreadyVisited = null)
+        private List<ProductionRule<ELang>> GetProductionRulesFromNonTerminal(ProductionRule<ELang> productionRule, List<Token<ELang>> tokensAlreadyVisited = null)
         {
 
+            var nonTerminalToken = productionRule.CurrentNode;
             tokensAlreadyVisited ??= new List<Token<ELang>>();
 
             var generatedRules = ProductionRules.Where(r => r.Head.Equals(nonTerminalToken)).ToList();
@@ -152,8 +155,7 @@ namespace CSharpParserGenerator
 
             var nonVisitedRules = generatedRules
                 .Where(g => g.Nodes.Any())
-                .Select(g => g.CurrentNode)
-                .Where(n => n.IsNonTerminal && !tokensAlreadyVisited.Contains(n))
+                .Where(n => n.CurrentNode.IsNonTerminal && !tokensAlreadyVisited.Contains(n.CurrentNode))
                 .Distinct();
 
             var resultRules = generatedRules.Select(r => r);
@@ -162,7 +164,7 @@ namespace CSharpParserGenerator
 
             foreach (var nonVisitedRule in nonVisitedRules)
             {
-                if (tokensAlreadyVisited.Contains(nonVisitedRule)) continue;
+                if (tokensAlreadyVisited.Contains(nonVisitedRule.CurrentNode)) continue;
                 resultRules = resultRules.Concat(GetProductionRulesFromNonTerminal(nonVisitedRule, tokensAlreadyVisited));
             }
             return resultRules.ToList();
@@ -195,7 +197,7 @@ namespace CSharpParserGenerator
                     if (!nextProduction.CurrentNode.IsNonTerminal) continue;
                     restProductionRules = restProductionRules
                                             .Union(
-                                                GetProductionRulesFromNonTerminal(nextProduction.CurrentNode)
+                                                GetProductionRulesFromNonTerminal(nextProduction)
                                             );
                 }
 
