@@ -70,7 +70,7 @@ namespace CSharpParserGenerator
 
                 if (action == null)
                 {
-                    var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(currentState).Select(t => t.IsEnd ? "EOF" : t.Symbol.ToString());
+                    var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(currentState).Select(t => t.IsEnd ? "EOF" : t.StringToken);
                     throw new InvalidOperationException($"Syntax error: Invalid value \"{currentNode.Substring}\" at position {currentNode.Position}. Any of these tokens were expected: {string.Join(", ", availableTokens)}");
                 }
 
