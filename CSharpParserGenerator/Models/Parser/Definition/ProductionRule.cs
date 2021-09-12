@@ -24,7 +24,7 @@ namespace CSharpParserGenerator
         public int ShiftPointerIdxOnReduce { get; }
         public Token<ELang> NextNode() => IsEnd ? null : Nodes[PivotIdx + 2];
         public override bool Equals(object other) => Equals(other as ProductionRule<ELang>);
-        public override int GetHashCode() => new { Head, Nodes }.GetHashCode();
+        public override int GetHashCode() => new { Head, Nodes, LookAhead }.GetHashCode();
         public bool Equals(ProductionRule<ELang> other)
         {
             var result = Id.Equals(other.Id) ||

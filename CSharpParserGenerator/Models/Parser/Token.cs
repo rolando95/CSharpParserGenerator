@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Utils.Sequence;
+using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
@@ -23,7 +22,7 @@ namespace CSharpParserGenerator
         public static Token<ELang> AnonymousNonTerminalToken() => new Token<ELang>(type: ETokenTypes.AnonymousNonTerminal);
         public static Token<ELang> EndToken() => new Token<ELang>(type: ETokenTypes.End);
         public ETokenTypes Type { get; }
-        public int Symbol { get; }
+        public Id Symbol { get; }
 
         private static Sequence AnonymousTokenSequence { get; } = new Sequence();
 

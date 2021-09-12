@@ -1,11 +1,12 @@
 namespace Utils.Sequence
 {
+    using Id = System.Int64;
     public class Sequence
     {
-        private int _id { get; set; } = 0;
-        public int Id { get => _id; }
-        public int Next() => _id++;
-        public int Reset()
+        private Id _id { get; set; } = 0;
+        public Id Id { get => _id; }
+        public Id Next() => _id++;
+        public Id Reset()
         {
             _id = 0; return Next();
         }

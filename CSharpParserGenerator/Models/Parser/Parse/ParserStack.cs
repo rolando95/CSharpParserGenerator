@@ -1,25 +1,25 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
     public class ParserStack
     {
         private int PointerIdx { get; set; }
-        private int InitialStateId { get; }
+        private Id InitialStateId { get; }
         private List<dynamic> Values { get; set; }
         public dynamic CurrentValue => Values.Last();
 
-        private List<int> States { get; set; }
-        public int CurrentState => States.Last();
+        private List<Id> States { get; set; }
+        public Id CurrentState => States.Last();
 
-        public ParserStack(int initialStateId)
+        public ParserStack(Id initialStateId)
         {
             InitialStateId = initialStateId;
             Values = new List<dynamic>() { null };
-            States = new List<int>() { initialStateId };
+            States = new List<Id>() { initialStateId };
         }
 
         public dynamic this[int idx]
@@ -36,7 +36,7 @@ namespace CSharpParserGenerator
 
         public void Reduce<ELang>(ActionState<ELang> action, List<ProductionRule<ELang>> productionRules) where ELang : Enum
         {
-            var productionRule = productionRules[action.To];
+            var productionRule = productionRules[Convert.ToInt32(action.To)];
             var size = productionRule.Nodes.Count - 2;
             var pivot = Values.Count - size;
 

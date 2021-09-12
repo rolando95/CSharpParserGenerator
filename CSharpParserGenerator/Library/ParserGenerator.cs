@@ -19,10 +19,11 @@ namespace CSharpParserGenerator
 
         public Parser<ELang> CompileParser()
         {
-            var rootState = new State<ELang>(Closure(ProductionRules.First()).ToList(), true);
+            var rootState = new State<ELang>(Closure(ProductionRules.First()).ToList());
             var states = new List<State<ELang>>() { rootState };
 
             rootState = GetStatesTree(rootState, states);
+            states = MergeLALR1States(ref states);
             var parserTable = GetParserTable(rootState, rootState);
 
             return new Parser<ELang>(Lexer, ProductionRules, states, rootState, parserTable);
@@ -198,22 +199,6 @@ namespace CSharpParserGenerator
                 }
 
                 var closure = Closure(nextProductions);
-
-                // Check if it can be mixed with another state (LALR Grammar)
-                if (closure.All(c => c.IsEnd))
-                {
-                    var matchState = states.FirstOrDefault(s => closure.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));
-                    if (matchState != null)
-                    {
-                        matchState.AddProductionRules(closure);
-                        foreach (var productionRule in productionRuleGroup)
-                        {
-                            if (!productionRule.IsEnd) productionRule.NextState = matchState;
-                        }
-                        continue;
-                    }
-                }
-
                 var nextState = new State<ELang>(closure);
                 states.Add(nextState);
                 foreach (var productionRule in productionRuleGroup)
@@ -223,6 +208,20 @@ namespace CSharpParserGenerator
                 GetStatesTree(nextState, states);
             }
             return currentState;
+        }
+
+        private List<State<ELang>> MergeLALR1States(ref List<State<ELang>> states)
+        {
+            foreach (var state in states)
+            {
+                var matchState = states.FirstOrDefault(s => s.Id != state.Id && state.ProductionRules.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));
+
+                if (matchState != null)
+                {
+                    state.MergeState(ref matchState);
+                }
+            }
+            return states.Distinct().ToList();
         }
 
         private ParserTable<ELang> GetParserTable(

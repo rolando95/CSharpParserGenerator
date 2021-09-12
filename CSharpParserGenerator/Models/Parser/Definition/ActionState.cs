@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
@@ -9,7 +10,7 @@ namespace CSharpParserGenerator
     public class ActionState<ELang> : IEquatable<ActionState<ELang>> where ELang : Enum
     {
         public ActionType Action { get; }
-        public int To { get; }
+        public Id To { get; }
         public ProductionRule<ELang> ProductionRule { get; }
 
         /// <summary>
@@ -18,7 +19,7 @@ namespace CSharpParserGenerator
         /// <para>If the action is Goto and To is 3, it reads as "Goto state 3". </para>
         /// <para>If the action is Reduce and To is 2, it reads as "Reduce to production rule 2" and so on.</para>
         /// </summary>
-        public ActionState(ActionType action, int to, ProductionRule<ELang> productionRule) { Action = action; To = to; ProductionRule = productionRule; }
+        public ActionState(ActionType action, Id to, ProductionRule<ELang> productionRule) { Action = action; To = to; ProductionRule = productionRule; }
 
         public override int GetHashCode() => new { Action, To }.GetHashCode();
         public bool Equals(ActionState<ELang> other)
