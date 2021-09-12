@@ -22,7 +22,14 @@ namespace CSharpParserGenerator
             var nonTerminalEnums = dictionary.Keys.Distinct().ToList();
             var firstNonTerminalToken = new Token<ELang>(ETokenTypes.NonTerminal, nonTerminalEnums.FirstOrDefault());
 
-            var rules = new List<ProductionRule<ELang>>() { new ProductionRule<ELang>(Token<ELang>.RootToken(), new List<Token<ELang>>() { firstNonTerminalToken }) };
+            var productionRules = new List<ProductionRule<ELang>>()
+            {
+                new ProductionRule<ELang>(
+                    head: Token<ELang>.RootToken(),
+                    nodes: new List<Token<ELang>>() { firstNonTerminalToken },
+                    lookAhead: Token<ELang>.EndToken()
+                )
+            };
 
             var definitionRules = dictionary
                 .AsEnumerable()
@@ -31,9 +38,9 @@ namespace CSharpParserGenerator
 
             foreach (var definitionRule in definitionRules)
             {
+                var head = new Token<ELang>(ETokenTypes.NonTerminal, definitionRule.Head);
                 var nodes = Enumerable.Empty<Token<ELang>>();
                 var definitionNodes = definitionRule.Nodes;
-
                 Op operation = null;
 
                 var idx = -1;
@@ -52,7 +59,12 @@ namespace CSharpParserGenerator
                         // Semantic action at middle
                         var anonymous = Token<ELang>.AnonymousNonTerminalToken();
                         nodes = nodes.Append(anonymous);
-                        rules.Add(new ProductionRule<ELang>(anonymous, new List<Token<ELang>>(), definitionNode.Op, -idx));
+                        productionRules.Add(new ProductionRule<ELang>(
+                            head: anonymous,
+                            nodes: new List<Token<ELang>>(),
+                            operation: definitionNode.Op,
+                            shiftPointerIdxOnReduce: -idx
+                        ));
                         continue;
                     }
 
@@ -61,10 +73,14 @@ namespace CSharpParserGenerator
                     nodes = nodes.Append(new Token<ELang>(type, symbol));
                 }
 
-                var head = new Token<ELang>(ETokenTypes.NonTerminal, definitionRule.Head);
-                rules.Add(new ProductionRule<ELang>(head, nodes, operation));
+
+                productionRules.Add(new ProductionRule<ELang>(
+                    head: head,
+                    nodes: nodes,
+                    operation: operation
+                ));
             }
-            return rules;
+            return productionRules;
         }
     }
 }

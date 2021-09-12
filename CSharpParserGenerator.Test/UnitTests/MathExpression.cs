@@ -105,15 +105,15 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
         private Parser<EMathLang> CompileParser()
         {
             // A' -> A
-            // A -> A + M
-            // A -> A - M
+            // A -> A + M
+            // A -> A - M
             // A -> M
-            // M -> M * E
-            // M -> M / E
+            // M -> M * E
+            // M -> M / E
             // M -> E
-            // E -> E ^ T
+            // E -> E ^ T
             // E -> T
-            // T -> ( A )
+            // T -> ( A )
             // T -> number
             var rules = new SyntaxDefinition<EMathLang>(new Dictionary<EMathLang, DefinitionRules>()
             {
