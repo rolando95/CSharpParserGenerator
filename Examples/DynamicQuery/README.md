@@ -143,7 +143,7 @@ And that's it! After defining the rules of the parser and having an instance it 
     var lexer = new Lexer<ELang>(tokens, ELang.Ignore);
 ```
 ### Syntax
-* The next thing is to define the production rules corresponding to the syntax of our language. So far CSharpParserGenerator only supports **SLR(1) grammar**, so you should take that into account. You can read about it through this [link](https://en.wikipedia.org/wiki/SLR_grammar).
+* The next thing is to define the production rules corresponding to the syntax of our language. So far CSharpParserGenerator only supports **LALR(1) grammars**, so you should take that into account. You can read about it through this [link](https://en.wikipedia.org/wiki/LALR_parser).
 * For this example, we have defined the following grammar:
 ```prolog
     Expression -> LogicalOr

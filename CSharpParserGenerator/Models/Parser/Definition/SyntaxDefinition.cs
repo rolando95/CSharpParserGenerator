@@ -27,7 +27,7 @@ namespace CSharpParserGenerator
                 new ProductionRule<ELang>(
                     head: Token<ELang>.RootToken(),
                     nodes: new List<Token<ELang>>() { firstNonTerminalToken },
-                    lookAheadNodes: new List<Token<ELang>> { Token<ELang>.EndToken() }
+                    lookAhead: Token<ELang>.EndToken()
                 )
             };
 

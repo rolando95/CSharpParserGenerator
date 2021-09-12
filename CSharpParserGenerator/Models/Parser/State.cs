@@ -10,12 +10,18 @@ namespace CSharpParserGenerator
     public class State<ELang> : IEquatable<State<ELang>> where ELang : Enum
     {
         private static Sequence Sequence { get; } = new Sequence();
+
         public int Id { get; } = Sequence.Next();
-        public List<ProductionRule<ELang>> ProductionRules { get; }
+
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private IEnumerable<ProductionRule<ELang>> _productionRules { get; set; }
+
+        public IEnumerable<ProductionRule<ELang>> ProductionRules => _productionRules;
 
         public State(List<ProductionRule<ELang>> productionRules, bool isRoot = false)
         {
-            ProductionRules = productionRules;
+            _productionRules = productionRules;
             if (isRoot) Id = Sequence.Reset();
         }
 
@@ -26,5 +32,9 @@ namespace CSharpParserGenerator
         public override bool Equals(object o) => Equals(o as State<ELang>);
         public bool Contains(IEnumerable<ProductionRule<ELang>> other) => other.All(p => ProductionRules.Contains(p));
 
+        public void AddProductionRules(IEnumerable<ProductionRule<ELang>> productionRules)
+        {
+            _productionRules = _productionRules.Concat(productionRules).Distinct();
+        }
     }
 }

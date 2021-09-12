@@ -19,31 +19,22 @@ namespace CSharpParserGenerator
 
         public Parser<ELang> CompileParser()
         {
-            var states = new List<State<ELang>>();
-            var rootProductionRules = GetProductionRulesFromNonTerminal(ProductionRules.First())
-                                        .Prepend(ProductionRules.First())
-                                        .ToList();
+            var rootState = new State<ELang>(Closure(ProductionRules.First()).ToList(), true);
+            var states = new List<State<ELang>>() { rootState };
 
-            var follows = new Dictionary<Token<ELang>, List<Token<ELang>>>();
-            var firsts = new Dictionary<Token<ELang>, List<Token<ELang>>>();
-            var rules = ProductionRules.Select(r => r.Head).Distinct();
-            foreach (var rule in rules)
-            {
-                firsts.Add(rule, GetFirsts(rule));
-                follows.Add(rule, GetFollows(rule));
-            }
-
-            var rootState = GetStatesTree(new State<ELang>(rootProductionRules, true), states);
-            var parserTable = GetParserTable(follows, rootState, rootState);
+            rootState = GetStatesTree(rootState, states);
+            var parserTable = GetParserTable(rootState, rootState);
 
             return new Parser<ELang>(Lexer, ProductionRules, states, rootState, parserTable);
         }
 
-        public List<Token<ELang>> GetFirsts(Token<ELang> nonTerminalToken, List<Token<ELang>> tokensAlreadyVisited = null)
+        public List<Token<ELang>> GetFirsts([NotNull] Token<ELang> token, List<Token<ELang>> tokensAlreadyVisited = null)
         {
+            if (!token.IsNonTerminal) return new List<Token<ELang>> { token };
+
             tokensAlreadyVisited ??= new List<Token<ELang>>();
 
-            var productionRules = ProductionRules.Where(p => p.Head.Equals(nonTerminalToken));
+            var productionRules = ProductionRules.Where(p => p.Head.Equals(token));
             var firsts = Enumerable.Empty<Token<ELang>>();
 
             foreach (var productionRule in productionRules)
@@ -143,66 +134,89 @@ namespace CSharpParserGenerator
             return follows.Distinct().ToList();
         }
 
-        private List<ProductionRule<ELang>> GetProductionRulesFromNonTerminal(ProductionRule<ELang> productionRule, List<Token<ELang>> tokensAlreadyVisited = null)
+
+        private List<ProductionRule<ELang>> Closure(ProductionRule<ELang> productionRule)
         {
-
-            var nonTerminalToken = productionRule.CurrentNode;
-            tokensAlreadyVisited ??= new List<Token<ELang>>();
-
-            var generatedRules = ProductionRules.Where(r => r.Head.Equals(nonTerminalToken)).ToList();
-            tokensAlreadyVisited.Add(nonTerminalToken);
-
-
-            var nonVisitedRules = generatedRules
-                .Where(g => g.Nodes.Any())
-                .Where(n => n.CurrentNode.IsNonTerminal && !tokensAlreadyVisited.Contains(n.CurrentNode))
-                .Distinct();
-
-            var resultRules = generatedRules.Select(r => r);
-            if (!nonVisitedRules.Any()) return resultRules.ToList();
-
-
-            foreach (var nonVisitedRule in nonVisitedRules)
-            {
-                if (tokensAlreadyVisited.Contains(nonVisitedRule.CurrentNode)) continue;
-                resultRules = resultRules.Concat(GetProductionRulesFromNonTerminal(nonVisitedRule, tokensAlreadyVisited));
-            }
-            return resultRules.ToList();
+            return Closure(new List<ProductionRule<ELang>> { productionRule });
         }
 
-        private State<ELang> GetStatesTree([NotNull] State<ELang> currentState, [NotNull] List<State<ELang>> states = null)
+
+        private List<ProductionRule<ELang>> Closure(IEnumerable<ProductionRule<ELang>> productionRules)
         {
-            states.Add(currentState);
 
-            var productionRuleGroups = currentState.ProductionRules.GroupBy(p => p.CurrentNode).ToList();
-            foreach (var producctionRuleGroup in productionRuleGroups)
+            bool changes;
+            do
             {
-                if (producctionRuleGroup.All(r => r.IsEnd)) continue;
+                changes = false;
+                var closureProductionRules = productionRules;
 
-                var nextProductions = producctionRuleGroup.Select(g => g.GetProductionRuleWithShiftedPivot()).ToList();
+                foreach (var closureProductionRule in closureProductionRules)
+                {
+                    var node = closureProductionRule.CurrentNode;
+                    var nextNode = closureProductionRule.NextNode();
+                    if (!node.IsNonTerminal) continue;
 
+                    // Next node is a non terminal
+                    var firsts = !nextNode.IsEnd ? GetFirsts(closureProductionRule.GetProductionRuleWithShiftedPivot(), new List<Token<ELang>>()) : Enumerable.Empty<Token<ELang>>();
+                    if (!firsts.Any() || firsts.Any(f => f.IsEnd)) firsts = firsts.Append(closureProductionRule.LookAhead);
+                    foreach (var productionRule in ProductionRules.Where(p => p.Head.Equals(node)))
+                    {
+                        foreach (var lookAhead in firsts)
+                        {
+                            var generated = productionRule.GetCopyWithAnotherLookAhead(lookAhead);
+                            if (!productionRules.Contains(generated))
+                            {
+                                productionRules = productionRules.Append(generated);
+                                changes = true;
+                            }
+                            continue;
+                        }
+                    }
+                }
+            } while (changes);
+            return productionRules.ToList();
+        }
+
+        private State<ELang> GetStatesTree([NotNull] State<ELang> currentState, [NotNull] List<State<ELang>> states)
+        {
+            var productionRuleGroups = currentState.ProductionRules.GroupBy(p => p.CurrentNode).ToList();
+            foreach (var productionRuleGroup in productionRuleGroups)
+            {
+                if (productionRuleGroup.All(r => r.IsEnd)) continue;
+
+                var nextProductions = productionRuleGroup.Select(g => g.GetProductionRuleWithShiftedPivot()).ToList();
+
+                //Check if there is any state that contains all productions
                 var matchExistingState = states.FirstOrDefault(s => s.Contains(nextProductions));
                 if (matchExistingState != null)
                 {
-                    foreach (var producctionRule in producctionRuleGroup)
+                    foreach (var productionRule in productionRuleGroup)
                     {
-                        producctionRule.NextState = matchExistingState;
+                        if (!productionRule.IsEnd) productionRule.NextState = matchExistingState;
                     }
                     continue;
                 }
 
-                IEnumerable<ProductionRule<ELang>> restProductionRules = new List<ProductionRule<ELang>>();
-                foreach (var nextProduction in nextProductions)
+                var closure = Closure(nextProductions);
+
+                // Check if it can be mixed with another state (LALR Grammar)
+                if (closure.All(c => c.IsEnd))
                 {
-                    if (!nextProduction.CurrentNode.IsNonTerminal) continue;
-                    restProductionRules = restProductionRules
-                                            .Union(
-                                                GetProductionRulesFromNonTerminal(nextProduction)
-                                            );
+                    var matchState = states.FirstOrDefault(s => closure.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));
+                    if (matchState != null)
+                    {
+                        matchState.AddProductionRules(closure);
+                        foreach (var productionRule in productionRuleGroup)
+                        {
+                            if (!productionRule.IsEnd) productionRule.NextState = matchState;
+                        }
+                        continue;
+                    }
                 }
 
-                var nextState = new State<ELang>(nextProductions.Concat(restProductionRules).ToList());
-                foreach (var productionRule in producctionRuleGroup)
+                var nextState = new State<ELang>(closure);
+                states.Add(nextState);
+                foreach (var productionRule in productionRuleGroup)
                 {
                     if (!productionRule.IsEnd) productionRule.NextState = nextState;
                 }
@@ -212,7 +226,6 @@ namespace CSharpParserGenerator
         }
 
         private ParserTable<ELang> GetParserTable(
-            Dictionary<Token<ELang>, List<Token<ELang>>> follows,
             State<ELang> rootState,
             State<ELang> currentState,
             ParserTable<ELang> parserTable = null
@@ -231,10 +244,10 @@ namespace CSharpParserGenerator
                 if (productionRule.IsEnd)
                 {
                     var rule = productionRule.Head;
-                    var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(productionRule));
+                    var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(productionRule, false, false));
                     var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx, productionRule);
 
-                    foreach (var token in follows[rule])
+                    var token = productionRule.LookAhead;
                     {
                         // Check conflicts
                         var currentActionState = parserTable[currentStateId, token];
@@ -265,7 +278,7 @@ namespace CSharpParserGenerator
                     if (currentActionState != null) continue;
 
                     parserTable[currentStateId, productionNode] = actionState;
-                    GetParserTable(follows, rootState, productionRule.NextState, parserTable);
+                    GetParserTable(rootState, productionRule.NextState, parserTable);
                 }
 
             }

@@ -13,7 +13,7 @@ namespace CSharpParserGenerator
         public Guid Id { get; }
         public Token<ELang> Head { get; }
         public List<Token<ELang>> Nodes { get; }
-        public List<Token<ELang>> LookAheadNodes { get; }
+        public Token<ELang> LookAhead { get; }
         public Token<ELang> CurrentNode { get; }
         public bool IsEnd { get; }
         public bool IsFirst => PivotIdx == 0;
@@ -31,7 +31,7 @@ namespace CSharpParserGenerator
             (
                 Head.Equals(other.Head) &&
                 Nodes.SequenceEqual(other.Nodes) &&
-                LookAheadNodes.SequenceEqual(other.LookAheadNodes)
+                (LookAhead?.Equals(other.LookAhead) ?? other.LookAhead == null)
             );
             return result;
         }
@@ -40,10 +40,11 @@ namespace CSharpParserGenerator
         /// Compares 2 production rules only by terminal and non-terminal symbols
         /// </summary>
         /// <returns></returns>
-        public bool Similar(ProductionRule<ELang> other) =>
+        public bool Similar(ProductionRule<ELang> other, bool comparePivot, bool compareLookAhead) =>
                 Head.Equals(other.Head) &&
-                Nodes.Where(n => n.IsTerminal || n.IsNonTerminal)
-                .SequenceEqual(other.Nodes.Where(n => n.IsTerminal || n.IsNonTerminal));
+                Nodes.Where(n => comparePivot || n.IsTerminal || n.IsNonTerminal)
+                .SequenceEqual(other.Nodes.Where(n => comparePivot || n.IsTerminal || n.IsNonTerminal)) &&
+                (!compareLookAhead || (LookAhead?.Equals(other.LookAhead) ?? LookAhead == null));
 
         public ProductionRule<ELang> GetProductionRuleWithShiftedPivot()
         {
@@ -55,24 +56,24 @@ namespace CSharpParserGenerator
             return new ProductionRule<ELang>(
                 head: Head,
                 nodes: nodesWithShiftedPivot,
-                lookAheadNodes: LookAheadNodes,
+                lookAhead: LookAhead,
                 operation: Operation,
                 shiftPointerIdxOnReduce: ShiftPointerIdxOnReduce
             );
         }
 
-        public ProductionRule<ELang> GetCopyWithAnotherLookAhead(List<Token<ELang>> lookAheadNodes)
+        public ProductionRule<ELang> GetCopyWithAnotherLookAhead(Token<ELang> lookAhead)
         {
             return new ProductionRule<ELang>(
                 head: Head,
                 nodes: Nodes,
-                lookAheadNodes: lookAheadNodes,
+                lookAhead: lookAhead,
                 operation: Operation,
                 shiftPointerIdxOnReduce: ShiftPointerIdxOnReduce
             );
         }
 
-        public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes, List<Token<ELang>> lookAheadNodes = null, Op operation = null, int shiftPointerIdxOnReduce = 0)
+        public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes, Token<ELang> lookAhead = null, Op operation = null, int shiftPointerIdxOnReduce = 0)
         {
             Id = Guid.NewGuid();
             Head = head;
@@ -98,8 +99,7 @@ namespace CSharpParserGenerator
             IsEnd = CurrentNode.Equals(endNode);
             Operation = operation;
             ShiftPointerIdxOnReduce = shiftPointerIdxOnReduce;
-            LookAheadNodes = lookAheadNodes ?? new List<Token<ELang>>();
-            LookAheadNodes.Sort();
+            LookAhead = lookAhead;
         }
 
         // Only to display in the debbuger
@@ -110,8 +110,7 @@ namespace CSharpParserGenerator
             {
                 var operation = Operation != null ? " (op)" : "";
                 var strNodes = Nodes.SkipLast(1).Select(n => n.StringToken);
-                var lookAhead = LookAheadNodes == null ? "" : $", {string.Join("/", LookAheadNodes.Select(n => n.StringToken))}";
-                return $"[{Head.StringToken} -> {string.Join(" ", strNodes)}{lookAhead}]{operation}".Replace(" ,", ",");
+                return $"[{Head.StringToken} -> {string.Join(" ", strNodes)} /{LookAhead?.StringToken}]{operation}";
             }
         }
     }
