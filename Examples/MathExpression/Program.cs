@@ -65,29 +65,29 @@ namespace MathExpression
             // 
             // T -> ( A )
             // T -> number
-            var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [ELang.A] = new DefinitionRules
+                [ELang.A] = new Token[][]
                     {
-                        new List<Token> { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] += o[2]; }) },
-                        new List<Token> { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] -= o[2]; }) },
-                        new List<Token> { ELang.M }
+                        new Token[] { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] += o[2]; }) },
+                        new Token[] { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] -= o[2]; }) },
+                        new Token[] { ELang.M }
                     },
-                [ELang.M] = new DefinitionRules
+                [ELang.M] = new Token[][]
                     {
-                        new List<Token> { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] *= o[2]; }) },
-                        new List<Token> { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] /= o[2]; }) },
-                        new List<Token> { ELang.E }
+                        new Token[] { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] *= o[2]; }) },
+                        new Token[] { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] /= o[2]; }) },
+                        new Token[] { ELang.E }
                     },
-                [ELang.E] = new DefinitionRules
+                [ELang.E] = new Token[][]
                     {
-                        new List<Token> { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
-                        new List<Token> { ELang.T }
+                        new Token[] { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
+                        new Token[] { ELang.T }
                     },
-                [ELang.T] = new DefinitionRules
+                [ELang.T] = new Token[][]
                     {
-                        new List<Token> { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => {o[0] = o[1]; }) },
-                        new List<Token> { ELang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
+                        new Token[] { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => {o[0] = o[1]; }) },
+                        new Token[] { ELang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
                     }
             });
 

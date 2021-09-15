@@ -36,18 +36,18 @@ namespace CSharpParserGenerator.Test.Parsers.LALRGrammar
             // X -> d c
             // X -> b d a
             // M -> d
-            var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [ELang.X] = new DefinitionRules
+                [ELang.X] = new Token[][]
                 {
-                    new List<Token> { ELang.M, ELang.a },
-                    new List<Token> { ELang.b, ELang.M, ELang.c },
-                    new List<Token> { ELang.d, ELang.c },
-                    new List<Token> { ELang.b, ELang.d, ELang.a },
+                    new Token[] { ELang.M, ELang.a },
+                    new Token[] { ELang.b, ELang.M, ELang.c },
+                    new Token[] { ELang.d, ELang.c },
+                    new Token[] { ELang.b, ELang.d, ELang.a },
                 },
-                [ELang.M] = new DefinitionRules
+                [ELang.M] = new Token[][]
                 {
-                    new List<Token> { ELang.d }
+                    new Token[] { ELang.d }
                 }
             });
 

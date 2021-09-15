@@ -85,24 +85,24 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
             Assert.Matches("(?i).*Invalid ParseResult value type.*", exceptionDetails.Message);
         }
 
-        private Lexer<EMathLang> GetLexer()
+        private Lexer<ELang> GetLexer()
         {
-            var tokens = new LexerDefinition<EMathLang>(new Dictionary<EMathLang, TokenRegex>
+            var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
             {
-                [EMathLang.Ignore] = "[ \\n]+",
-                [EMathLang.LParenthesis] = "\\(",
-                [EMathLang.RParenthesis] = "\\)",
-                [EMathLang.Plus] = "\\+",
-                [EMathLang.Pow] = "(\\*\\*|\\^)",
-                [EMathLang.Mul] = "\\*",
-                [EMathLang.Div] = "/",
-                [EMathLang.Sub] = "-",
-                [EMathLang.Number] = "[-+]?\\d*(\\.\\d+)?",
+                [ELang.Ignore] = "[ \\n]+",
+                [ELang.LParenthesis] = "\\(",
+                [ELang.RParenthesis] = "\\)",
+                [ELang.Plus] = "\\+",
+                [ELang.Pow] = "(\\*\\*|\\^)",
+                [ELang.Mul] = "\\*",
+                [ELang.Div] = "/",
+                [ELang.Sub] = "-",
+                [ELang.Number] = "[-+]?\\d*(\\.\\d+)?",
             });
-            return new Lexer<EMathLang>(tokens, EMathLang.Ignore);
+            return new Lexer<ELang>(tokens, ELang.Ignore);
         }
 
-        private Parser<EMathLang> CompileParser()
+        private Parser<ELang> CompileParser()
         {
             // A' -> A
             // A -> A + M
@@ -115,36 +115,36 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
             // E -> T
             // T -> ( A )
             // T -> number
-            var rules = new SyntaxDefinition<EMathLang>(new Dictionary<EMathLang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [EMathLang.A] = new DefinitionRules
+                [ELang.A] = new Token[][]
                     {
-                        new List<Token> { EMathLang.A, EMathLang.Plus, EMathLang.M, new Op(o => { o[0] += o[2]; }) },
-                        new List<Token> { EMathLang.A, EMathLang.Sub, EMathLang.M, new Op(o => { o[0] -= o[2]; }) },
-                        new List<Token> { EMathLang.M }
-                    },
-                [EMathLang.M] = new DefinitionRules
+                    new Token[] { ELang.A, ELang.Plus, ELang.M, new Op(o => { o[0] += o[2]; }) },
+                    new Token[] { ELang.A, ELang.Sub, ELang.M, new Op(o => { o[0] -= o[2]; }) },
+                    new Token[] { ELang.M }
+                },
+                [ELang.M] = new Token[][]
                     {
-                        new List<Token> { EMathLang.M, EMathLang.Mul, EMathLang.E, new Op(o => { o[0] *= o[2]; }) },
-                        new List<Token> { EMathLang.M, EMathLang.Div, EMathLang.E, new Op(o => { o[0] /= o[2]; }) },
-                        new List<Token> { EMathLang.E }
-                    },
-                [EMathLang.E] = new DefinitionRules
+                    new Token[] { ELang.M, ELang.Mul, ELang.E, new Op(o => { o[0] *= o[2]; }) },
+                    new Token[] { ELang.M, ELang.Div, ELang.E, new Op(o => { o[0] /= o[2]; }) },
+                    new Token[] { ELang.E }
+                },
+                [ELang.E] = new Token[][]
                     {
-                        new List<Token> { EMathLang.E, EMathLang.Pow, EMathLang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
-                        new List<Token> { EMathLang.T }
-                    },
-                [EMathLang.T] = new DefinitionRules
+                    new Token[] { ELang.E, ELang.Pow, ELang.T, new Op(o => { o[0] = Math.Pow(o[0], o[2]); }) },
+                    new Token[] { ELang.T }
+                },
+                [ELang.T] = new Token[][]
                     {
-                        new List<Token> { EMathLang.LParenthesis, EMathLang.A, EMathLang.RParenthesis, new Op(o => {o[0] = o[1]; }) },
-                        new List<Token> { EMathLang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
-                    }
+                    new Token[] { ELang.LParenthesis, ELang.A, ELang.RParenthesis, new Op(o => { o[0] = o[1]; }) },
+                    new Token[] { ELang.Number, new Op(o => o[0] = Convert.ToDouble(o[0])) }
+                }
             });
 
-            return new ParserGenerator<EMathLang>(GetLexer(), rules).CompileParser();
+            return new ParserGenerator<ELang>(GetLexer(), rules).CompileParser();
         }
 
-        private enum EMathLang
+        private enum ELang
         {
             A, E, M, T,
 

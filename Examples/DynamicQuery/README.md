@@ -53,25 +53,25 @@ According to the filters you send in the request only those people who meet the 
     - It is recommended to create a 'own' class that contains all the lexical, syntactic and semantic definitions of the language and compiled parser. If you choose to create your own parser class and work with dependency injection, you can guide yourself with [./Services/MyQueryParser.cs](./Services/MyQueryParser.cs) (Notice that in the [Startup.cs](./Startup.cs), MyQueryParser class was injected as a Singleton).
     - To generate the parser, lexer and syntax rules are required.
 ```C#
-    var tokens = new LexerDefinition<ELang>(new Dictionary<ELang, TokenRegex>
+    var tokens = new LexerDefinition<MyLangEnum>(new Dictionary<MyLangEnum, TokenRegex>
     {
         [MyLangEnum.TokenName] = "regex pattern"
         // ...
     });
 
-    var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+    var rules = new GrammarRules<MyLangEnum>(new Dictionary<MyLangEnum, Token[][]>()
     {
-        [MyLangEnum.NonTerminalToken] = new DefinitionRules
+        [MyLangEnum.NonTerminalToken] = new Token[][]
         {
-            new List<Token> { /* Production rules */, new Op(o => { /* Semantic actions */ }) }
+            new Token[] { /* Production rules */, new Op(o => { /* Semantic actions */ }) }
             // ...
         },
 
         // ...
     });
 
-    var lexer = new Lexer<ELang>(tokens, MyLangEnum.IgnoreToken);
-    var MyParser = new ParserGenerator<ELang>(lexer, rules).CompileParser();
+    var lexer = new Lexer<MyLangEnum>(tokens, MyLangEnum.IgnoreToken);
+    var MyParser = new ParserGenerator<MyLangEnum>(lexer, rules).CompileParser();
 ```
 * Parse Function
     - Having the parser, simply call the Parse method and send an input string as a parameter.
@@ -168,72 +168,72 @@ And that's it! After defining the rules of the parser and having an instance it 
 ```
 * In CSharpParserGenerator, the definition of the rules would look as follows:
 ```C#
-    var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+    var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
     {
-        [ELang.Expression] = new DefinitionRules
+        [ELang.Expression] = new Token[][]
         {
             // Expression -> LogicalOr
-            new List<Token> { ELang.LogicalOr }
+            new Token[] { ELang.LogicalOr }
         },
-        [ELang.LogicalOr] = new DefinitionRules
+        [ELang.LogicalOr] = new Token[][]
         {
             // LogicalOr -> LogicalOr or LogicalAnd
-            new List<Token> { ELang.LogicalOr, ELang.Or, ELang.LogicalAnd },
+            new Token[] { ELang.LogicalOr, ELang.Or, ELang.LogicalAnd },
             
             // LogicalOr -> LogicalAnd
-            new List<Token> { ELang.LogicalAnd }
+            new Token[] { ELang.LogicalAnd }
         },
-        [ELang.LogicalAnd] = new DefinitionRules
+        [ELang.LogicalAnd] = new Token[][]
         {
             // LogicalAnd -> LogicalAnd and Relational
-            new List<Token> { ELang.LogicalAnd, ELang.And, ELang.Relational },
+            new Token[] { ELang.LogicalAnd, ELang.And, ELang.Relational },
             
             // LogicalAnd -> Relational
-            new List<Token> { ELang.Relational }
+            new Token[] { ELang.Relational }
         },
-        [ELang.Relational] = new DefinitionRules
+        [ELang.Relational] = new Token[][]
         {
             // Relational -> property eq Term
-            new List<Token> { ELang.Property, ELang.Eq, ELang.Term },
+            new Token[] { ELang.Property, ELang.Eq, ELang.Term },
 
             // Relational -> property neq Term
-            new List<Token> { ELang.Property, ELang.Neq, ELang.Term },
+            new Token[] { ELang.Property, ELang.Neq, ELang.Term },
 
             // Relational -> property gt Term
-            new List<Token> { ELang.Property, ELang.Gt, ELang.Term },
+            new Token[] { ELang.Property, ELang.Gt, ELang.Term },
             
             // Relational -> property lt Term
-            new List<Token> { ELang.Property, ELang.Lt, ELang.Term },
+            new Token[] { ELang.Property, ELang.Lt, ELang.Term },
 
             // Relational -> property gte Term
-            new List<Token> { ELang.Property, ELang.Gte, ELang.Term },
+            new Token[] { ELang.Property, ELang.Gte, ELang.Term },
             
             // Relational -> property lte Term
-            new List<Token> { ELang.Property, ELang.Lte, ELang.Term },
+            new Token[] { ELang.Property, ELang.Lte, ELang.Term },
 
             // Relational -> ( Expression )
-            new List<Token> { ELang.LParenthesis, ELang.Expression, ELang.RParenthesis },
+            new Token[] { ELang.LParenthesis, ELang.Expression, ELang.RParenthesis },
         },
-        [ELang.Term] = new DefinitionRules
+        [ELang.Term] = new Token[][]
         {
             // Term -> number
-            new List<Token> { ELang.Number },
+            new Token[] { ELang.Number },
 
             // Term -> boolean
-            new List<Token> { ELang.Boolean },
+            new Token[] { ELang.Boolean },
 
             // Term -> string
-            new List<Token> { ELang.String },
+            new Token[] { ELang.String },
         }
     });
 ```
-### Semantics
+### Semantic Actions
 * The previous syntax definition is incomplete. As you can see, the rules of production are clear, but there is no 'logic' that shows what to do.
     - We take this production rule from another example:
     ```C#
-        [ELang.Addition] = new DefinitionRules
+        [ELang.Addition] = new Token[][]
         {
-            new List<Token> { ELang.Number, ELang.Add, ELang.Number },
+            new Token[] { ELang.Number, ELang.Add, ELang.Number },
         }
     ```
     - It can be read as _"The addition produces number add number"_. For **CSharpParserGenerator**, this translates into a single **List** where positions are _Number_ ```[0]```, _Add_ ```[1]``` and _Number_ ```[2]```. In each production rule the resulting value of position 0 is raised to the tree, therefore the semantic action should operate on the numbers and assign the result to position 0 before rising.
@@ -243,9 +243,9 @@ And that's it! After defining the rules of the parser and having an instance it 
     ```
     - The output of the production rule with the semantic operation in CSharpParserGenerator would be as follows:
     ```C#
-        [ELang.Addition] = new DefinitionRules
+        [ELang.Addition] = new Token[][]
         {
-            new List<Token> { ELang.Number, ELang.Add, ELang.Number, new Op(o => { o[0] = o[0] + o[2]; }) },
+            new Token[] { ELang.Number, ELang.Add, ELang.Number, new Op(o => { o[0] = o[0] + o[2]; }) },
         }
     ```
     - As you can see, just write the operation at the end of the production rule. Now let's continue with the example of the Dynamic Parser...
@@ -268,9 +268,9 @@ And that's it! After defining the rules of the parser and having an instance it 
 * The idea with this example is to create a binary syntax tree. Each node indicates whether the operation is relational (Storing the property, operation, and value to compare) or whether it is logical (Storing the operation and the nodes on the left and right side of the tree).
 * So if we have the expression "Relational produces Property Eq Term" written as: 
 ```C#
-    [ELang.Relational] = new DefinitionRules
+    [ELang.Relational] = new Token[][]
     {
-        new List<Token> { ELang.Property, ELang.Eq, ELang.Term }
+        new Token[] { ELang.Property, ELang.Eq, ELang.Term }
     }
 ```
 * The semantic operation would be:
@@ -286,9 +286,9 @@ And that's it! After defining the rules of the parser and having an instance it 
 ```
 * The production rule with the semantic action would be as follows:
 ```C#
-    [ELang.Relational] = new DefinitionRules
+    [ELang.Relational] = new Token[][]
     {
-        new List<Token> { 
+        new Token[] { 
             ELang.Property, ELang.Eq, ELang.Term, 
             new Op(o => o[0] = new MyExpressionTree() 
             { 

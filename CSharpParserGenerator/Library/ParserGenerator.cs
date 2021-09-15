@@ -12,7 +12,7 @@ namespace CSharpParserGenerator
         private List<ProductionRule<ELang>> ProductionRules { get; set; }
         private Lexer<ELang> Lexer { get; set; }
 
-        public ParserGenerator([NotNull] Lexer<ELang> lexer, [NotNull] SyntaxDefinition<ELang> definition)
+        public ParserGenerator([NotNull] Lexer<ELang> lexer, [NotNull] GrammarRules<ELang> definition)
         {
             Lexer = lexer;
             ProductionRules = definition.ProductionRules;
