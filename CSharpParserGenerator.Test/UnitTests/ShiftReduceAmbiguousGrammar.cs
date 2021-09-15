@@ -33,26 +33,26 @@ namespace CSharpParserGenerator.Test.Parsers.ShiftReduceAmbiguousGrammar
             // B -> a
             // B -> a D
             // D -> b
-            var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [ELang.S] = new DefinitionRules
+                [ELang.S] = new Token[][]
                     {
-                        new List<Token> { ELang.c, ELang.B, ELang.b, ELang.A},
-                        new List<Token> { ELang.c, ELang.A }
+                        new Token[] { ELang.c, ELang.B, ELang.b, ELang.A},
+                        new Token[] { ELang.c, ELang.A }
                     },
-                [ELang.A] = new DefinitionRules
+                [ELang.A] = new Token[][]
                     {
-                        new List<Token> { ELang.a },
-                        new List<Token> { }
+                        new Token[] { ELang.a },
+                        null
                     },
-                [ELang.B] = new DefinitionRules
+                [ELang.B] = new Token[][]
                     {
-                        new List<Token> { ELang.a },
-                        new List<Token> { ELang.a, ELang.D }
+                        new Token[] { ELang.a },
+                        new Token[] { ELang.a, ELang.D }
                     },
-                [ELang.D] = new DefinitionRules
+                [ELang.D] = new Token[][]
                     {
-                        new List<Token> { ELang.b }
+                        new Token[] { ELang.b }
                     }
             });
 

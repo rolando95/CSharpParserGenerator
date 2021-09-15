@@ -32,29 +32,29 @@ namespace CSharpParserGenerator.Test.Parsers.ReduceReduceAmbiguousGrammar
             // B -> D
             // C -> D
             // D -> d
-            var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [ELang.S] = new DefinitionRules
+                [ELang.S] = new Token[][]
                     {
-                        new List<Token> { ELang.A}
-                    },
-                [ELang.A] = new DefinitionRules
+                    new Token[] { ELang.A }
+                },
+                [ELang.A] = new Token[][]
                     {
-                        new List<Token> { ELang.B, ELang.a, ELang.b },
-                        new List<Token> { ELang.C, ELang.a, ELang.c }
-                    },
-                [ELang.B] = new DefinitionRules
+                    new Token[] { ELang.B, ELang.a, ELang.b },
+                    new Token[] { ELang.C, ELang.a, ELang.c }
+                },
+                [ELang.B] = new Token[][]
                     {
-                        new List<Token> { ELang.D }
-                    },
-                [ELang.C] = new DefinitionRules
+                    new Token[] { ELang.D }
+                },
+                [ELang.C] = new Token[][]
                     {
-                        new List<Token> { ELang.D }
-                    },
-                [ELang.D] = new DefinitionRules
+                    new Token[] { ELang.D }
+                },
+                [ELang.D] = new Token[][]
                     {
-                        new List<Token> { ELang.d }
-                    }
+                    new Token[] { ELang.d }
+                }
             });
 
             return new ParserGenerator<ELang>(lexer, rules).CompileParser();

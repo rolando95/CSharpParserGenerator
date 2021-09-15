@@ -13,7 +13,7 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
     /// <br/>   * Multiple semantic actions per production rule
     /// <br/>   * Empty production rules with semantic actions
     /// <br/> How this grammar is supposed to work?
-    /// <br/>   * This grammar can be summarized in the following regular expression (spaces are ignored): "(ab?c?d*;)+"
+    /// <br/>   * This grammar can be summarized in the following regular expression (spaces are ignored): "(ab?c?d*e?;)+"
     /// <br/>   * According to the input string, the result must be:
     /// <br/>       - A string list where each item is represented with the transformation of each character
     /// <br/>       - For each character except for the 'd': The same character if it appears, !'char' if it is absent. 
@@ -68,40 +68,40 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
             // D ->
             // E -> e
             // E ->
-            var rules = new SyntaxDefinition<ELang>(new Dictionary<ELang, DefinitionRules>()
+            var rules = new GrammarRules<ELang>(new Dictionary<ELang, Token[][]>()
             {
-                [ELang.R] = new DefinitionRules
+                [ELang.R] = new Token[][]
                 {
-                    new List<Token> { ELang.S, new Op(o => o[0] = (o[0] as IEnumerable<string>).ToArray()) }
+                    new Token[] { ELang.S, new Op(o => o[0] = (o[0] as IEnumerable<string>).ToArray()) }
                 },
-                [ELang.S] = new DefinitionRules
+                [ELang.S] = new Token[][]
                 {
-                    new List<Token> { ELang.A, ELang.S, new Op(o => o[0] = ConcatItems(o[0], o[1])) },
-                    new List<Token> { ELang.A }
+                    new Token[] { ELang.A, ELang.S, new Op(o => o[0] = ConcatItems(o[0], o[1])) },
+                    new Token[] { ELang.A }
                 },
-                [ELang.A] = new DefinitionRules
+                [ELang.A] = new Token[][]
                 {
-                    new List<Token> { ELang.a, ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[1], o[2], $"d{o[3]}", o[4], ";")) },
-                    new List<Token> { ELang.a, ELang.B, new Op(o => o[2] = "!c"), ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems("a", o[1], o[2], $"d{o[3]}", o[4], ";")) }
+                    new Token[] { ELang.a, ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems(o[0], o[1], o[2], $"d{o[3]}", (o[4] ?? "!e"), o[5])) },
+                    new Token[] { ELang.a, ELang.B, new Op(o => o[2] = "!c"), ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems(o[0], o[1], o[2], $"d{o[3]}", (o[4] ?? "!e"), ";")) }
                 },
-                [ELang.B] = new DefinitionRules
+                [ELang.B] = new Token[][]
                 {
-                    new List<Token> { ELang.b },
-                    new List<Token> { new Op(o => o[0] = "!b" ) }
+                    new Token[] { ELang.b },
+                    new Token[] { new Op(o => o[0] = "!b") }
                 },
-                [ELang.C] = new DefinitionRules
+                [ELang.C] = new Token[][]
                 {
-                    new List<Token> { ELang.c }
+                    new Token[] { ELang.c }
                 },
-                [ELang.D] = new DefinitionRules
+                [ELang.D] = new Token[][]
                 {
-                    new List<Token> { ELang.d, ELang.D, new Op(o => o[0] = 1 + o[1] ) },
-                    new List<Token> { new Op(o => o[0] = 0 ) }
+                    new Token[] { ELang.d, ELang.D, new Op(o => o[0] = 1 + o[1]) },
+                    new Token[] { new Op(o => o[0] = 0) }
                 },
-                [ELang.E] = new DefinitionRules
+                [ELang.E] = new Token[][]
                 {
-                    new List<Token> { ELang.e },
-                    new List<Token> { new Op(o => o[0] = "!e" ) }
+                    new Token[] { ELang.e },
+                    new Token[0]
                 },
             });
             return new ParserGenerator<ELang>(lexer, rules).CompileParser();

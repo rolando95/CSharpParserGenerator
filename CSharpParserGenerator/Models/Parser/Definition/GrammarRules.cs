@@ -5,19 +5,16 @@ using System.Linq;
 
 namespace CSharpParserGenerator
 {
-
-    public class DefinitionRules : List<List<Token>> { }
-
-    public class SyntaxDefinition<ELang> where ELang : Enum
+    public class GrammarRules<ELang> where ELang : Enum
     {
         public List<ProductionRule<ELang>> ProductionRules { get; }
 
-        public SyntaxDefinition(Dictionary<ELang, DefinitionRules> productionRules)
+        public GrammarRules(Dictionary<ELang, Token[][]> productionRules)
         {
             ProductionRules = MapProductionRuleEnumerable(productionRules);
         }
 
-        private List<ProductionRule<ELang>> MapProductionRuleEnumerable(Dictionary<ELang, DefinitionRules> dictionary)
+        private List<ProductionRule<ELang>> MapProductionRuleEnumerable(Dictionary<ELang, Token[][]> dictionary)
         {
             var nonTerminalEnums = dictionary.Keys.Distinct().ToList();
             var firstNonTerminalToken = new Token<ELang>(ETokenTypes.NonTerminal, nonTerminalEnums.FirstOrDefault());
@@ -40,7 +37,7 @@ namespace CSharpParserGenerator
             {
                 var head = new Token<ELang>(ETokenTypes.NonTerminal, definitionRule.Head);
                 var nodes = Enumerable.Empty<Token<ELang>>();
-                var definitionNodes = definitionRule.Nodes;
+                var definitionNodes = definitionRule.Nodes ?? new Token[0];
                 Op operation = null;
 
                 var idx = -1;
