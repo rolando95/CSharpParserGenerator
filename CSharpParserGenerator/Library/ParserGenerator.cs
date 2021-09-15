@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Utils.Extensions;
 
 namespace CSharpParserGenerator
 {
@@ -20,13 +21,11 @@ namespace CSharpParserGenerator
         public Parser<ELang> CompileParser()
         {
             var rootState = new State<ELang>(Closure(ProductionRules.First()).ToList());
-            var states = new List<State<ELang>>() { rootState };
+            var lrStates = GenerateLr1(rootState);
+            var lalrStates = ConvertLr1ToLalr1(lrStates);
+            var parserTable = GenerateParserTable(rootState);
 
-            rootState = GetStatesTree(rootState, states);
-            states = MergeLALR1States(ref states);
-            var parserTable = GetParserTable(rootState, rootState);
-
-            return new Parser<ELang>(Lexer, ProductionRules, states, rootState, parserTable);
+            return new Parser<ELang>(Lexer, ProductionRules, lalrStates, rootState, parserTable);
         }
 
         public List<Token<ELang>> GetFirsts([NotNull] Token<ELang> token, List<Token<ELang>> tokensAlreadyVisited = null)
@@ -45,7 +44,7 @@ namespace CSharpParserGenerator
             return firsts.Distinct().ToList();
         }
 
-        private IEnumerable<Token<ELang>> GetFirsts(ProductionRule<ELang> productionRule, [NotNull] List<Token<ELang>> tokensAlreadyVisited)
+        public IEnumerable<Token<ELang>> GetFirsts([NotNull] ProductionRule<ELang> productionRule, [NotNull] List<Token<ELang>> tokensAlreadyVisited)
         {
             if (!productionRule.CurrentNode.IsNonTerminal)
             {
@@ -71,78 +70,12 @@ namespace CSharpParserGenerator
                 );
         }
 
-        public List<Token<ELang>> GetFollows([NotNull] Token<ELang> nonTerminalToken, IEnumerable<Token<ELang>> tokensAlreadyVisited = null)
-        {
-            tokensAlreadyVisited ??= Enumerable.Empty<Token<ELang>>();
-
-            var follows = Enumerable.Empty<Token<ELang>>();
-
-            // Root token places $ symbol
-            if (nonTerminalToken.Equals(Token<ELang>.RootToken()))
-            {
-                follows = follows.Append(Token<ELang>.EndToken());
-            }
-
-            foreach (var productionRule in ProductionRules)
-            {
-                var nonTerminalIndexes = productionRule.Nodes
-                    .Select((node, idx) => new { Node = node, idx = idx })
-                    .Where(r =>
-                        !tokensAlreadyVisited.Contains(r.Node) &&
-                        r.Node.Equals(nonTerminalToken)
-                    )
-                    .Select(n => n.idx);
-
-                if (!nonTerminalIndexes.Any()) continue;
-
-                foreach (var nonTerminalIndex in nonTerminalIndexes)
-                {
-                    foreach (var nextNode in productionRule.Nodes.Skip(nonTerminalIndex + 1))
-                    {
-                        //  A → αB
-                        // Follow(B) = Follow(A)
-                        if (nextNode.IsEnd)
-                        {
-                            follows = follows.Concat(GetFollows(productionRule.Head, tokensAlreadyVisited.Append(nonTerminalToken)));
-                            break;
-                        }
-
-                        // A → αBβ
-                        // If β is terminal, Follow(B) = { β }
-                        if (nextNode.IsTerminal)
-                        {
-                            follows = follows.Append(nextNode);
-                            break;
-                        }
-
-                        var firsts = GetFirsts(nextNode);
-
-                        // A → αBβ
-                        // If $ ∉ First(β), Follow(B) = First(β)
-                        if (!firsts.Any(f => f.IsEnd))
-                        {
-                            follows = follows.Concat(firsts);
-                            break;
-                        }
-
-                        // A → αBβ
-                        // If $ ∈ First(β), Follow(B) = First(β) - $
-                        follows = follows.Concat(firsts.Where(f => !f.IsEnd));
-                    }
-                }
-            }
-
-            return follows.Distinct().ToList();
-        }
-
-
-        private List<ProductionRule<ELang>> Closure(ProductionRule<ELang> productionRule)
+        public List<ProductionRule<ELang>> Closure(ProductionRule<ELang> productionRule)
         {
             return Closure(new List<ProductionRule<ELang>> { productionRule });
         }
 
-
-        private List<ProductionRule<ELang>> Closure(IEnumerable<ProductionRule<ELang>> productionRules)
+        public List<ProductionRule<ELang>> Closure(IEnumerable<ProductionRule<ELang>> productionRules)
         {
 
             bool changes;
@@ -178,8 +111,9 @@ namespace CSharpParserGenerator
             return productionRules.ToList();
         }
 
-        private State<ELang> GetStatesTree([NotNull] State<ELang> currentState, [NotNull] List<State<ELang>> states)
+        private List<State<ELang>> GenerateLr1([NotNull] State<ELang> currentState, List<State<ELang>> states = null)
         {
+            states ??= new List<State<ELang>> { currentState };
             var productionRuleGroups = currentState.ProductionRules.GroupBy(p => p.CurrentNode).ToList();
             foreach (var productionRuleGroup in productionRuleGroups)
             {
@@ -205,30 +139,27 @@ namespace CSharpParserGenerator
                 {
                     if (!productionRule.IsEnd) productionRule.NextState = nextState;
                 }
-                GetStatesTree(nextState, states);
+                GenerateLr1(nextState, states);
             }
-            return currentState;
+            return states;
         }
 
-        private List<State<ELang>> MergeLALR1States(ref List<State<ELang>> states)
+        private List<State<ELang>> ConvertLr1ToLalr1(List<State<ELang>> states)
         {
-            foreach (var state in states)
+            var result = states.Copy();
+            foreach (var state in result)
             {
-                var matchState = states.FirstOrDefault(s => s.Id != state.Id && state.ProductionRules.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));
+                var matchState = result.FirstOrDefault(s => s.Id != state.Id && state.ProductionRules.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));
 
                 if (matchState != null)
                 {
                     state.MergeState(ref matchState);
                 }
             }
-            return states.Distinct().ToList();
+            return result.Distinct().ToList();
         }
 
-        private ParserTable<ELang> GetParserTable(
-            State<ELang> rootState,
-            State<ELang> currentState,
-            ParserTable<ELang> parserTable = null
-        )
+        private ParserTable<ELang> GenerateParserTable(State<ELang> currentState, ParserTable<ELang> parserTable = null)
         {
             parserTable ??= new ParserTable<ELang>();
 
@@ -244,7 +175,8 @@ namespace CSharpParserGenerator
                 {
                     var rule = productionRule.Head;
                     var productionRuleIdx = ProductionRules.FindIndex(p => p.Similar(productionRule, false, false));
-                    var actionState = new ActionState<ELang>(productionRuleIdx == 0 ? ActionType.Accept : ActionType.Reduce, productionRuleIdx, productionRule);
+                    var actionType = productionRule.Head.IsRoot ? ActionType.Accept : ActionType.Reduce;
+                    var actionState = new ActionState<ELang>(actionType, productionRuleIdx, productionRule);
 
                     var token = productionRule.LookAhead;
                     {
@@ -277,7 +209,7 @@ namespace CSharpParserGenerator
                     if (currentActionState != null) continue;
 
                     parserTable[currentStateId, productionNode] = actionState;
-                    GetParserTable(rootState, productionRule.NextState, parserTable);
+                    GenerateParserTable(productionRule.NextState, parserTable);
                 }
 
             }

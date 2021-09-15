@@ -3,29 +3,20 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Sequence;
-using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
     [DebuggerDisplay("State {Alias}")]
-    public class State<ELang> : IEquatable<State<ELang>> where ELang : Enum
+    public class State<ELang> : BaseSequence, IEquatable<State<ELang>> where ELang : Enum
     {
-        private static Sequence Sequence { get; } = new Sequence();
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private Id _Id { get; set; } = Sequence.Next();
-        public Id Id => _Id;
-
-        public string Alias { get; set; }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private IEnumerable<ProductionRule<ELang>> _ProductionRules { get; set; }
-        public IEnumerable<ProductionRule<ELang>> ProductionRules => _ProductionRules;
+        public string Alias { get; private set; }
+        public IEnumerable<ProductionRule<ELang>> ProductionRules { get; private set; }
 
         public State(List<ProductionRule<ELang>> productionRules)
         {
-            _ProductionRules = productionRules;
-            Alias = _Id.ToString();
+            ProductionRules = productionRules;
+            Alias = Id.ToString();
         }
 
         public bool Equals(State<ELang> other) => Id.Equals(other.Id);
@@ -38,7 +29,7 @@ namespace CSharpParserGenerator
         {
             AddProductionRules(other.ProductionRules);
             other.AddProductionRules(ProductionRules);
-            other._Id = Id;
+            other.Id = Id;
             var alias = $"{Alias}-{other.Alias}";
             other.Alias = alias;
             Alias = alias;
@@ -46,7 +37,7 @@ namespace CSharpParserGenerator
 
         public void AddProductionRules(IEnumerable<ProductionRule<ELang>> productionRules)
         {
-            _ProductionRules = _ProductionRules.Concat(productionRules).Distinct().ToList();
+            ProductionRules = ProductionRules.Concat(productionRules).Distinct().ToList();
         }
     }
 }

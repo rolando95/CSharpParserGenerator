@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Extensions;
+using Utils.Sequence;
+using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
     [DebuggerDisplay("{StringProductionRule}")]
-    public class ProductionRule<ELang> : IEquatable<ProductionRule<ELang>> where ELang : Enum
+    public class ProductionRule<ELang> : BaseSequence, IEquatable<ProductionRule<ELang>> where ELang : Enum
     {
         private int PivotIdx { get; }
-        public Guid Id { get; }
         public Token<ELang> Head { get; }
         public List<Token<ELang>> Nodes { get; }
         public Token<ELang> LookAhead { get; }
@@ -75,7 +76,6 @@ namespace CSharpParserGenerator
 
         public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes, Token<ELang> lookAhead = null, Op operation = null, int shiftPointerIdxOnReduce = 0)
         {
-            Id = Guid.NewGuid();
             Head = head;
 
             Nodes = nodes.ToList();

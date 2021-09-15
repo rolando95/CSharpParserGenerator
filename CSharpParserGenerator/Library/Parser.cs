@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Utils.Extensions;
 
 namespace CSharpParserGenerator
 {
@@ -59,13 +57,12 @@ namespace CSharpParserGenerator
             var currentNode = NextLexerNode(lexerNodesEnumerator);
             var currentToken = currentNode.Token;
             var currentState = RootState.Id;
-            var parserStack = new ParserStack(RootState.Id);
+            var parseStack = new ParseStack(RootState.Id);
 
             var accept = false;
 
             do
             {
-
                 var action = ParserTable.GetAction(currentState, currentToken);
 
                 if (action == null)
@@ -78,30 +75,30 @@ namespace CSharpParserGenerator
                 {
                     case ActionType.Accept:
                         {
-                            result = parserStack.CurrentValue;
+                            result = parseStack.CurrentValue;
                             accept = true;
                             break;
                         }
                     case ActionType.Shift:
                         {
-                            parserStack.Shift(currentNode, action);
+                            parseStack.Shift(currentNode, action);
                             currentNode = NextLexerNode(lexerNodesEnumerator);
                             currentToken = currentNode.Token;
-                            currentState = parserStack.CurrentState;
+                            currentState = parseStack.CurrentState;
                             break;
                         }
                     case ActionType.Goto:
                         {
-                            parserStack.Goto(action);
-                            currentState = parserStack.CurrentState;
+                            parseStack.Goto(action);
+                            currentState = parseStack.CurrentState;
                             currentToken = currentNode.Token;
                             break;
                         }
                     case ActionType.Reduce:
                         {
-                            parserStack.Reduce(action, ProductionRules);
+                            parseStack.Reduce(action, ProductionRules);
                             currentToken = action.ProductionRule.Head;
-                            currentState = parserStack.CurrentState;
+                            currentState = parseStack.CurrentState;
                             break;
                         }
                 }

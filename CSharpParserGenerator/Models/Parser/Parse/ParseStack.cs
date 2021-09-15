@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Id = System.Int64;
 
@@ -9,19 +10,17 @@ namespace CSharpParserGenerator
 
     [DebuggerDisplay("Count = {Values?.Count}")]
     [DebuggerTypeProxy(typeof(ParserStackDebugView))]
-    public class ParserStack
+    public class ParseStack
     {
         private int PointerIdx { get; set; }
-        private Id InitialStateId { get; }
         private List<dynamic> Values { get; set; }
         public dynamic CurrentValue => Values.Last();
 
         private List<Id> States { get; set; }
         public Id CurrentState => States.Last();
 
-        public ParserStack(Id initialStateId)
+        public ParseStack(Id initialStateId)
         {
-            InitialStateId = initialStateId;
             Values = new List<dynamic>() { null };
             States = new List<Id>() { initialStateId };
         }
@@ -73,12 +72,13 @@ namespace CSharpParserGenerator
         }
 
         // Debug View
+        [ExcludeFromCodeCoverage]
         internal class ParserStackDebugView
         {
-            private ParserStack ParserStack;
-            public ParserStackDebugView(ParserStack parserStack)
+            private ParseStack ParseStack;
+            public ParserStackDebugView(ParseStack parseStack)
             {
-                ParserStack = parserStack;
+                ParseStack = parseStack;
             }
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
@@ -86,16 +86,16 @@ namespace CSharpParserGenerator
             {
                 get
                 {
-                    if (ParserStack.Values == null) return null;
+                    if (ParseStack.Values == null) return null;
 
-                    var values = ParserStack.Values;
-                    var pointerIdx = ParserStack.PointerIdx;
-                    StackItem[] items = new StackItem[values.Count];
+                    var values = ParseStack.Values;
+                    var pointerIdx = ParseStack.PointerIdx;
+                    StackItem[] items = new StackItem[values.Count - 1];
 
                     int i = 0;
-                    foreach (object value in values)
+                    foreach (object value in values.Skip(1))
                     {
-                        items[i] = new StackItem(i - pointerIdx, value);
+                        items[i] = new StackItem(i - pointerIdx + 1, value);
                         i++;
                     }
                     return items;
@@ -103,7 +103,7 @@ namespace CSharpParserGenerator
             }
         }
 
-        [DebuggerDisplay("{Value}", Name = "{Idx}")]
+        [DebuggerDisplay("{Value}", Name = "{Idx}"), ExcludeFromCodeCoverage]
         internal class StackItem
         {
             private int Idx;

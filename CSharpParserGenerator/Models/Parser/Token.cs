@@ -15,7 +15,7 @@ namespace CSharpParserGenerator
     }
 
     [DebuggerDisplay("{StringToken}")]
-    public class Token<ELang> : IComparable<Token<ELang>>, IEquatable<Token<ELang>> where ELang : Enum
+    public class Token<ELang> : IEquatable<Token<ELang>> where ELang : Enum
     {
         public static Token<ELang> RootToken() => new Token<ELang>(type: ETokenTypes.Root);
         public static Token<ELang> PivotToken() => new Token<ELang>(type: ETokenTypes.Pivot);
@@ -34,7 +34,6 @@ namespace CSharpParserGenerator
 
         public bool Equals(Token<ELang> other) => Type.Equals(other.Type) && Convert.ToInt32(Symbol) == Convert.ToInt32(other.Symbol);
         public bool Equals(Enum other) => Convert.ToInt32(Symbol) == Convert.ToInt32(other);
-        public override bool Equals(object other) => other?.GetType() == typeof(Token<ELang>) ? Equals(other as Token<ELang>) : Equals(other as Enum);
         public override int GetHashCode() => new { Type, Symbol }.GetHashCode();
 
         public Token(ETokenTypes type, ELang symbol = default)
@@ -51,14 +50,6 @@ namespace CSharpParserGenerator
             Type = type;
 
         }
-
-        public int CompareTo(Token<ELang> other)
-        {
-            if (other == null) return 1;
-            if (Type == other.Type) return Symbol.CompareTo(other.Symbol);
-            return Convert.ToInt32(Type).CompareTo(Convert.ToInt32(other.Type));
-        }
-
 
         // Only to display in the debbuger
         [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
@@ -83,8 +74,8 @@ namespace CSharpParserGenerator
     {
         public Enum Symbol { get; }
         public Op Op { get; }
+        public bool IsOperation => Op != null;
         public Token(Enum symbol) { Symbol = symbol; }
-
         public Token(Op op) { Op = op; }
         public static implicit operator Token(Enum e) => new Token(symbol: e);
         public static implicit operator Token(Op op) => new Token(op: op);

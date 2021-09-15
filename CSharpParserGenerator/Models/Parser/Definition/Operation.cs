@@ -3,20 +3,20 @@ namespace CSharpParserGenerator
 {
     public class Op
     {
-        Func<ParserStack, dynamic> @Func;
-        Action<ParserStack> @Action;
+        Func<ParseStack, dynamic> @Func;
+        Action<ParseStack> @Action;
 
-        public Op(Func<ParserStack, dynamic> func)
+        public Op(Func<ParseStack, dynamic> func)
         {
             @Func = func;
         }
 
-        public Op(Action<ParserStack> action)
+        public Op(Action<ParseStack> action)
         {
             @Action = action;
         }
 
-        public void Callback(ParserStack args)
+        public void Callback(ParseStack args)
         {
             if (Func != null) { @Func(args); return; }
             if (Action != null) { @Action(args); return; }

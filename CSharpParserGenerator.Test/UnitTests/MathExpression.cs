@@ -66,7 +66,7 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
             var parser = CompileParser();
 
             // Object result
-            var objectResult = parser.Parse<object>("3 + 4.0 * 0.5 - 2");
+            var objectResult = parser.Parse("3 + 4.0 * 0.5 - 2");
             Assert.True(objectResult.Success);
             Assert.Equal(3, Convert.ToDouble(objectResult.Value));
 

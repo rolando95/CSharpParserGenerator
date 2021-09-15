@@ -22,7 +22,8 @@ namespace CSharpParserGenerator
             try
             {
                 return new LexerProcessExpressionResult<ELang>(text, true, nodes: ParseLexerNodes(text).ToList());
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 return new LexerProcessExpressionResult<ELang>(text, false, errorMessage: e.Message);
             }

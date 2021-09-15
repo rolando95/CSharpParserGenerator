@@ -47,7 +47,7 @@ namespace CSharpParserGenerator
                 foreach (var definitionNode in definitionNodes)
                 {
                     ++idx;
-                    if (definitionNode.Op != null)
+                    if (definitionNode.IsOperation)
                     {
                         // Semantic action at end
                         if (definitionNode == definitionNodes.Last())
