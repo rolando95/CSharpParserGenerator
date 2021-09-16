@@ -4,6 +4,12 @@ CSharpSimpleParserGenerator is a tool that allows you to create LALR grammars. I
 
 ![Parser Diagram example](./Docs/ParserDiagramExample.svg)
 
+## Add package
+
+```properties
+dotnet add package CSharpParserGenerator
+```
+
 ## Examples
 
 We recommend reviewing some of the examples available
