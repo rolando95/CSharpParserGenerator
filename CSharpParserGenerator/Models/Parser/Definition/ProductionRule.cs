@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Utils.Extensions;
 using Utils.Sequence;
 using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
     [DebuggerDisplay("{StringProductionRule}")]
-    public class ProductionRule<ELang> : BaseSequence, IEquatable<ProductionRule<ELang>> where ELang : Enum
+    public class ProductionRule<ELang> : IEquatable<ProductionRule<ELang>> where ELang : Enum
     {
+        private static Sequence Ids { get; } = new Sequence();
+        public Id Id { get; protected set; } = Ids.Next();
         private int PivotIdx { get; }
         public Token<ELang> Head { get; }
         public List<Token<ELang>> Nodes { get; }
@@ -23,13 +24,14 @@ namespace CSharpParserGenerator
 
         public Op Operation { get; }
         public int ShiftPointerIdxOnReduce { get; }
-        public Token<ELang> NextNode() => IsEnd ? null : Nodes[PivotIdx + 2];
+
         public override bool Equals(object other) => Equals(other as ProductionRule<ELang>);
         public override int GetHashCode() => new { Head, Nodes, LookAhead }.GetHashCode();
         public bool Equals(ProductionRule<ELang> other)
         {
             var result = Id.Equals(other.Id) ||
             (
+                PivotIdx == other.PivotIdx &&
                 Head.Equals(other.Head) &&
                 Nodes.SequenceEqual(other.Nodes) &&
                 (LookAhead?.Equals(other.LookAhead) ?? other.LookAhead == null)
@@ -43,20 +45,25 @@ namespace CSharpParserGenerator
         /// <returns></returns>
         public bool Similar(ProductionRule<ELang> other, bool comparePivot, bool compareLookAhead) =>
                 Head.Equals(other.Head) &&
-                Nodes.Where(n => comparePivot || n.IsTerminal || n.IsNonTerminal)
-                .SequenceEqual(other.Nodes.Where(n => comparePivot || n.IsTerminal || n.IsNonTerminal)) &&
+                Nodes.SequenceEqual(other.Nodes) &&
+                (!comparePivot || PivotIdx == other.PivotIdx) &&
                 (!compareLookAhead || (LookAhead?.Equals(other.LookAhead) ?? LookAhead == null));
+
+        public Token<ELang> NextNode()
+        {
+            if (IsEnd) return null;
+            if (Nodes.Count - 1 == PivotIdx) return Token<ELang>.EndToken();
+            return Nodes[PivotIdx + 1];
+        }
 
         public ProductionRule<ELang> GetProductionRuleWithShiftedPivot()
         {
             if (IsEnd) throw new InvalidOperationException("It is not possible to take a shift when you are already at the end of production");
 
-            var nodesWithShiftedPivot = Nodes.Copy();
-            nodesWithShiftedPivot.Swap(PivotIdx, PivotIdx + 1);
-
             return new ProductionRule<ELang>(
                 head: Head,
-                nodes: nodesWithShiftedPivot,
+                nodes: Nodes,
+                pivotIdx: PivotIdx + 1,
                 lookAhead: LookAhead,
                 operation: Operation,
                 shiftPointerIdxOnReduce: ShiftPointerIdxOnReduce
@@ -70,33 +77,20 @@ namespace CSharpParserGenerator
                 nodes: Nodes,
                 lookAhead: lookAhead,
                 operation: Operation,
+                pivotIdx: PivotIdx,
                 shiftPointerIdxOnReduce: ShiftPointerIdxOnReduce
             );
         }
 
-        public ProductionRule(Token<ELang> head, IEnumerable<Token<ELang>> nodes, Token<ELang> lookAhead = null, Op operation = null, int shiftPointerIdxOnReduce = 0)
+        public ProductionRule(Token<ELang> head, List<Token<ELang>> nodes, int pivotIdx = 0, Token<ELang> lookAhead = null, Op operation = null, int shiftPointerIdxOnReduce = 0)
         {
             Head = head;
+            Nodes = nodes;
+            PivotIdx = pivotIdx;
 
-            Nodes = nodes.ToList();
-            PivotIdx = Nodes.FindIndex(n => n.IsPivot);
+            IsEnd = Nodes.Count == PivotIdx;
+            CurrentNode = IsEnd ? Token<ELang>.EndToken() : Nodes[PivotIdx];
 
-            var pivotNode = Token<ELang>.PivotToken();
-            var endNode = Token<ELang>.EndToken();
-
-            if (PivotIdx < 0)
-            {
-                Nodes.Insert(0, pivotNode);
-                PivotIdx = 0;
-            }
-
-            if (!Nodes.Any(n => n.IsEnd))
-            {
-                Nodes.Add(endNode);
-            }
-
-            CurrentNode = Nodes[PivotIdx + 1];
-            IsEnd = CurrentNode.Equals(endNode);
             Operation = operation;
             ShiftPointerIdxOnReduce = shiftPointerIdxOnReduce;
             LookAhead = lookAhead;
@@ -109,7 +103,8 @@ namespace CSharpParserGenerator
             get
             {
                 var operation = Operation != null ? " (op)" : "";
-                var strNodes = Nodes.SkipLast(1).Select(n => n.StringToken);
+                var strNodes = Nodes.Select((n, idx) => idx == PivotIdx ? $".{n.StringToken}" : n.StringToken);
+                if (IsEnd) strNodes = strNodes.Append(".");
                 return $"[{Head.StringToken} -> {string.Join(" ", strNodes)} /{LookAhead?.StringToken}]{operation}";
             }
         }

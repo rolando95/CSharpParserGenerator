@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Utils.Sequence;
-
+using Id = System.Int64;
 namespace CSharpParserGenerator
 {
     [DebuggerDisplay("State {Alias}")]
-    public class State<ELang> : BaseSequence, IEquatable<State<ELang>> where ELang : Enum
+    public class State<ELang> : IEquatable<State<ELang>> where ELang : Enum
     {
-
+        private static Sequence Ids { get; } = new Sequence();
+        public Id Id { get; protected set; } = Ids.Next();
         public string Alias { get; private set; }
         public IEnumerable<ProductionRule<ELang>> ProductionRules { get; private set; }
 

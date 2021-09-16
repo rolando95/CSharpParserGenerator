@@ -40,7 +40,7 @@ namespace CSharpParserGenerator
         public void Reduce<ELang>(ActionState<ELang> action, List<ProductionRule<ELang>> productionRules) where ELang : Enum
         {
             var productionRule = productionRules[Convert.ToInt32(action.To)];
-            var size = productionRule.Nodes.Count - 2;
+            var size = productionRule.Nodes.Count;
             var pivot = Values.Count - size;
 
             PointerIdx = pivot + productionRule.ShiftPointerIdxOnReduce;

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Utils.Extensions;
 
 namespace CSharpParserGenerator
 {
@@ -146,7 +145,7 @@ namespace CSharpParserGenerator
 
         private List<State<ELang>> ConvertLr1ToLalr1(List<State<ELang>> states)
         {
-            var result = states.Copy();
+            var result = states.Select(s => s);
             foreach (var state in result)
             {
                 var matchState = result.FirstOrDefault(s => s.Id != state.Id && state.ProductionRules.All(c => s.ProductionRules.Any(p => p.Similar(c, true, false))));

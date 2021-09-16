@@ -10,15 +10,13 @@ namespace CSharpParserGenerator
     {
         Terminal, NonTerminal, AnonymousNonTerminal,
         Root = int.MaxValue,
-        Pivot = int.MaxValue - 1,
-        End = int.MaxValue - 2
+        End = int.MaxValue - 1
     }
 
     [DebuggerDisplay("{StringToken}")]
     public class Token<ELang> : IEquatable<Token<ELang>> where ELang : Enum
     {
         public static Token<ELang> RootToken() => new Token<ELang>(type: ETokenTypes.Root);
-        public static Token<ELang> PivotToken() => new Token<ELang>(type: ETokenTypes.Pivot);
         public static Token<ELang> AnonymousNonTerminalToken() => new Token<ELang>(type: ETokenTypes.AnonymousNonTerminal);
         public static Token<ELang> EndToken() => new Token<ELang>(type: ETokenTypes.End);
         public ETokenTypes Type { get; }
@@ -28,7 +26,6 @@ namespace CSharpParserGenerator
 
         public bool IsNonTerminal => Type == ETokenTypes.NonTerminal || Type == ETokenTypes.Root || Type == ETokenTypes.AnonymousNonTerminal;
         public bool IsTerminal => Type == ETokenTypes.Terminal;
-        public bool IsPivot => Type == ETokenTypes.Pivot;
         public bool IsEnd => Type == ETokenTypes.End;
         public bool IsRoot => Type == ETokenTypes.Root;
 
@@ -60,7 +57,6 @@ namespace CSharpParserGenerator
                 var result = Type switch
                 {
                     ETokenTypes.Root => "Root",
-                    ETokenTypes.Pivot => ".",
                     ETokenTypes.End => "$",
                     ETokenTypes.AnonymousNonTerminal => $"@{Symbol}",
                     _ => $"{(ELang)Enum.ToObject(typeof(ELang), Symbol)}"

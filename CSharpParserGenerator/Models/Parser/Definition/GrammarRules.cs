@@ -73,7 +73,7 @@ namespace CSharpParserGenerator
 
                 productionRules.Add(new ProductionRule<ELang>(
                     head: head,
-                    nodes: nodes,
+                    nodes: nodes.ToList(),
                     operation: operation
                 ));
             }
