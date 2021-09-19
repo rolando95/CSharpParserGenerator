@@ -1,6 +1,6 @@
 # **C# LALR Parser Generator**
 
-CSharpSimpleParserGenerator is a tool that allows you to create LALR grammars. It includes a **lexical**, **syntactic** and **semantic** parser that can work at run time with native C# code.
+CSharpParserGenerator is a tool that allows you to create LALR grammars. It includes a **lexical**, **syntactic** and **semantic** parser that can work at run time with native C# code.
 
 ![Parser Diagram example](./Docs/ParserDiagramExample.svg)
 
