@@ -221,8 +221,8 @@ namespace CSharpParserGenerator
             return new InvalidOperationException(
     @$"Conflict detected. Possible {a.Action.ToString()}/{b.Action.ToString()} operations
     To solve this conflict, refactor production rules: 
-    {a.ProductionRule.StringProductionRule}
-    {b.ProductionRule.StringProductionRule}"
+    {a.ProductionRule.ToString()}
+    {b.ProductionRule.ToString()}"
             );
         }
     }

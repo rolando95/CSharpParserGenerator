@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 
 namespace CSharpParserGenerator
 {
-    [DebuggerDisplay("{StringToken}")]
     public class LexerNode<ELang> : LexerToken<ELang> where ELang : Enum
     {
         public string Substring { get; set; }
@@ -21,9 +19,8 @@ namespace CSharpParserGenerator
 
         public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken(), null);
 
-        // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
-        public string StringToken => $"({Token.Symbol}) {Substring}";
+        [ExcludeFromCodeCoverage]
+        public override string ToString() => $"({Token.Symbol}) {Substring}";
     }
 
     public class LexerProcessExpressionResult<ELang> where ELang : Enum

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Utils.Sequence;
 using Id = System.Int64;
@@ -13,7 +12,6 @@ namespace CSharpParserGenerator
         End = int.MaxValue - 1
     }
 
-    [DebuggerDisplay("{StringToken}")]
     public class Token<ELang> : IEquatable<Token<ELang>> where ELang : Enum
     {
         public static Token<ELang> RootToken() => new Token<ELang>(type: ETokenTypes.Root);
@@ -48,21 +46,17 @@ namespace CSharpParserGenerator
 
         }
 
-        // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromCodeCoverage]
-        public string StringToken
+        [ExcludeFromCodeCoverage]
+        public override string ToString()
         {
-            get
+            var result = Type switch
             {
-                var result = Type switch
-                {
-                    ETokenTypes.Root => "Root",
-                    ETokenTypes.End => "$",
-                    ETokenTypes.AnonymousNonTerminal => $"@{Symbol}",
-                    _ => $"{(ELang)Enum.ToObject(typeof(ELang), Symbol)}"
-                };
-                return result;
-            }
+                ETokenTypes.Root => "Root",
+                ETokenTypes.End => "$",
+                ETokenTypes.AnonymousNonTerminal => $"@{Symbol}",
+                _ => $"{(ELang)Enum.ToObject(typeof(ELang), Symbol)}"
+            };
+            return result;
         }
     }
 

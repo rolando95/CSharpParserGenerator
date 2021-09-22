@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Utils.Sequence;
 using Id = System.Int64;
 
 namespace CSharpParserGenerator
 {
-    [DebuggerDisplay("{StringProductionRule}")]
     public class ProductionRule<ELang> : IEquatable<ProductionRule<ELang>> where ELang : Enum
     {
         private static Sequence Ids { get; } = new Sequence();
@@ -96,17 +94,12 @@ namespace CSharpParserGenerator
             LookAhead = lookAhead;
         }
 
-        // Only to display in the debbuger
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        public string StringProductionRule
+        public override string ToString()
         {
-            get
-            {
-                var operation = Operation != null ? " (op)" : "";
-                var strNodes = Nodes.Select((n, idx) => idx == PivotIdx ? $".{n.StringToken}" : n.StringToken);
-                if (IsEnd) strNodes = strNodes.Append(".");
-                return $"[{Head.StringToken} -> {string.Join(" ", strNodes)} /{LookAhead?.StringToken}]{operation}";
-            }
+            var operation = Operation != null ? " (op)" : "";
+            var strNodes = Nodes.Select((n, idx) => idx == PivotIdx ? $".{n.ToString()}" : n.ToString());
+            if (IsEnd) strNodes = strNodes.Append(".");
+            return $"[{Head.ToString()} -> {string.Join(" ", strNodes)} /{LookAhead?.ToString()}]{operation}";
         }
     }
 }
