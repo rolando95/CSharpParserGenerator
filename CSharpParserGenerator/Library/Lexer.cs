@@ -8,13 +8,19 @@ namespace CSharpParserGenerator
 {
     public class Lexer<ELang> where ELang : Enum
     {
-        public IEnumerable<LexerToken<ELang>> Tokens { get; }
+        public IEnumerable<LexerToken<ELang>> Tokens { get; private set; }
         private ELang IgnoreToken { get; }
 
         public Lexer(LexerDefinition<ELang> tokens, ELang ignoreToken = default)
         {
             Tokens = tokens.Tokens;
             IgnoreToken = ignoreToken;
+        }
+
+        public void AddTokens(IEnumerable<LexerToken<ELang>> tokens)
+        {
+            var difference = tokens.Except(Tokens);
+            Tokens = difference.Concat(Tokens);
         }
 
         public LexerProcessExpressionResult<ELang> ProcessExpression(string text)

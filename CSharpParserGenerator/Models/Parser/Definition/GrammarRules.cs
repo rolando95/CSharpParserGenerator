@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using Utils.Sequence;
 
 namespace CSharpParserGenerator
 {
     public class GrammarRules<ELang> where ELang : Enum
     {
         public List<ProductionRule<ELang>> ProductionRules { get; }
+        public List<LexerToken<ELang>> AnonymousTerminalTokens { get; private set; }
 
         public GrammarRules(Dictionary<ELang, Token[][]> productionRules)
         {
@@ -16,8 +17,11 @@ namespace CSharpParserGenerator
 
         private List<ProductionRule<ELang>> MapProductionRuleEnumerable(Dictionary<ELang, Token[][]> dictionary)
         {
+            AnonymousTerminalTokens = new List<LexerToken<ELang>>();
+
+            var anonymousTokenSequence = new Sequence();
             var nonTerminalEnums = dictionary.Keys.Distinct().ToList();
-            var firstNonTerminalToken = new Token<ELang>(ETokenTypes.NonTerminal, nonTerminalEnums.FirstOrDefault());
+            var firstNonTerminalToken = new Token<ELang>(type: ETokenTypes.NonTerminal, symbol: nonTerminalEnums.FirstOrDefault());
 
             var productionRules = new List<ProductionRule<ELang>>()
             {
@@ -54,7 +58,7 @@ namespace CSharpParserGenerator
                         }
 
                         // Semantic action at middle
-                        var anonymous = Token<ELang>.AnonymousNonTerminalToken();
+                        var anonymous = Token<ELang>.AnonymousNonTerminalToken(anonymousTokenSequence.Next().ToString());
                         nodes = nodes.Append(anonymous);
                         productionRules.Add(new ProductionRule<ELang>(
                             head: anonymous,
@@ -62,6 +66,14 @@ namespace CSharpParserGenerator
                             operation: definitionNode.Op,
                             shiftPointerIdxOnReduce: -idx
                         ));
+                        continue;
+                    }
+
+                    if (definitionNode.IsAnonymous)
+                    {
+                        var token = new Token<ELang>(type: ETokenTypes.AnonymousTerminal, name: definitionNode.Name);
+                        nodes = nodes.Append(token);
+                        AnonymousTerminalTokens.Add(new LexerToken<ELang>(token, definitionNode.Name));
                         continue;
                     }
 

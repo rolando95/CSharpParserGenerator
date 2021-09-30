@@ -20,7 +20,7 @@ namespace CSharpParserGenerator
         public static LexerNode<ELang> EndLexerNode(int position = 0) => new LexerNode<ELang>("EOF", position, Token<ELang>.EndToken(), null);
 
         [ExcludeFromCodeCoverage]
-        public override string ToString() => $"({Token.Symbol}) {Substring}";
+        public override string ToString() => $"({Token.ToString()}) {Substring}";
     }
 
     public class LexerProcessExpressionResult<ELang> where ELang : Enum

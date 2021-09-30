@@ -48,12 +48,9 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
             {
                 [ELang.Ignore] = "[ \\n]+",
                 [ELang.a] = "a",
-                [ELang.b] = "b",
-                [ELang.c] = "c",
-                [ELang.d] = "d",
-                [ELang.e] = "e",
                 [ELang.semicolon] = ";"
             });
+
             var lexer = new Lexer<ELang>(tokens, ELang.Ignore);
 
             // R -> S
@@ -81,26 +78,26 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
                 },
                 [ELang.A] = new Token[][]
                 {
-                    new Token[] { ELang.a, ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems(o[0], o[1], o[2], $"d{o[3]}", (o[4] ?? "!e"), o[5])) },
+                    new Token[] { "a", ELang.B, ELang.C, ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems(o[0], o[1], o[2], $"d{o[3]}", (o[4] ?? "!e"), o[5])) },
                     new Token[] { ELang.a, ELang.B, new Op(o => o[2] = "!c"), ELang.D, ELang.E, ELang.semicolon, new Op(o => o[0] = ConcatItems(o[0], o[1], o[2], $"d{o[3]}", (o[4] ?? "!e"), ";")) }
                 },
                 [ELang.B] = new Token[][]
                 {
-                    new Token[] { ELang.b },
+                    new Token[] { "b" },
                     new Token[] { new Op(o => o[0] = "!b") }
                 },
                 [ELang.C] = new Token[][]
                 {
-                    new Token[] { ELang.c }
+                    new Token[] { "c" }
                 },
                 [ELang.D] = new Token[][]
                 {
-                    new Token[] { ELang.d, ELang.D, new Op(o => o[0] = 1 + o[1]) },
+                    new Token[] { "d", ELang.D, new Op(o => o[0] = 1 + o[1]) },
                     new Token[] { new Op(o => o[0] = 0) }
                 },
                 [ELang.E] = new Token[][]
                 {
-                    new Token[] { ELang.e },
+                    new Token[] { "e" },
                     new Token[0]
                 },
             });
@@ -121,7 +118,7 @@ namespace CSharpParserGenerator.Test.Parsers.ComplexGrammar
         {
             R, S, A, B, C, D, E,
 
-            a, b, c, d, e, semicolon, Ignore
+            a, semicolon, Ignore
         }
     }
 }

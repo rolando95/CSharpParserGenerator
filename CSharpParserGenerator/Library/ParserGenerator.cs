@@ -14,6 +14,7 @@ namespace CSharpParserGenerator
         public ParserGenerator([NotNull] Lexer<ELang> lexer, [NotNull] GrammarRules<ELang> definition)
         {
             Lexer = lexer;
+            Lexer.AddTokens(definition.AnonymousTerminalTokens);
             ProductionRules = definition.ProductionRules;
         }
 

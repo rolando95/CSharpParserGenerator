@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace CSharpParserGenerator
 {
-    public class LexerToken<ELang> where ELang : Enum
+    public class LexerToken<ELang> : IEquatable<LexerToken<ELang>> where ELang : Enum
     {
         public Token<ELang> Token { get; }
 
@@ -32,6 +32,16 @@ namespace CSharpParserGenerator
         {
             var m = Pattern.Match(text);
             return m.Success ? m.Length : 0;
+        }
+
+        public bool Equals(LexerToken<ELang> other)
+        {
+            return Token.Equals(other.Token) && Pattern.ToString() == other.Pattern.ToString();
+        }
+
+        public override int GetHashCode()
+        {
+            return new { Token, Pattern = Pattern.ToString() }.GetHashCode();
         }
     }
 
