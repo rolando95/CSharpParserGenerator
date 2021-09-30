@@ -77,13 +77,13 @@ namespace CSharpParserGenerator
         public List<ProductionRule<ELang>> Closure(IEnumerable<ProductionRule<ELang>> productionRules)
         {
 
-            bool changes;
+            var changes = productionRules;
             do
             {
-                changes = false;
-                var closureProductionRules = productionRules;
+                var oldChanges = changes;
+                changes = Enumerable.Empty<ProductionRule<ELang>>();
 
-                foreach (var closureProductionRule in closureProductionRules)
+                foreach (var closureProductionRule in oldChanges)
                 {
                     var node = closureProductionRule.CurrentNode;
                     var nextNode = closureProductionRule.NextNode();
@@ -97,16 +97,16 @@ namespace CSharpParserGenerator
                         foreach (var lookAhead in firsts)
                         {
                             var generated = productionRule.GetCopyWithAnotherLookAhead(lookAhead);
-                            if (!productionRules.Contains(generated))
+                            if (!productionRules.Concat(changes).Contains(generated))
                             {
-                                productionRules = productionRules.Append(generated);
-                                changes = true;
+                                changes = changes.Append(generated);
                             }
                             continue;
                         }
                     }
                 }
-            } while (changes);
+                productionRules = productionRules.Concat(changes);
+            } while (changes.Any());
             return productionRules.ToList();
         }
 
