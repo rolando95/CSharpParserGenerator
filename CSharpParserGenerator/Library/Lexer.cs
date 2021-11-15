@@ -44,23 +44,26 @@ namespace CSharpParserGenerator
             {
                 var oldPosition = position;
 
-                var match = Tokens
-                    .Select((t, idx) => new { Definition = t, MatchLength = t.MatchLength(textRemaining) })
-                    .FirstOrDefault(t => t.MatchLength > 0);
+                var matches = Tokens
+                    .Select((t, idx) => new { Definition = t, MatchLength = t.MatchLength(textRemaining), Idx = idx })
+                    .OrderByDescending(t => t.MatchLength)
+                    .ThenBy(t => t.Idx);
 
-                if (match == null)
+                var bestMatch = matches.FirstOrDefault(t => t.MatchLength > 0);
+
+                if (bestMatch == null)
                 {
                     throw new InvalidOperationException($"Invalid character \"{textRemaining[0]}\" at position {position}: {text}");
                 }
 
-                var matchLength = match.MatchLength;
+                var matchLength = bestMatch.MatchLength;
                 string substring = textRemaining[..matchLength];
 
                 position += matchLength;
                 textRemaining = textRemaining[matchLength..];
-                if (match.Definition.Token.Equals(IgnoreToken)) continue;
+                if (bestMatch.Definition.Token.Equals(IgnoreToken)) continue;
 
-                yield return new LexerNode<ELang>(substring, oldPosition, match.Definition.Token, match.Definition.Pattern);
+                yield return new LexerNode<ELang>(substring, oldPosition, bestMatch.Definition.Token, bestMatch.Definition.Pattern);
             }
 
             yield return LexerNode<ELang>.EndLexerNode(position);

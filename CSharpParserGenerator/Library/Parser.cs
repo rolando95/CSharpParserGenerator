@@ -39,7 +39,7 @@ namespace CSharpParserGenerator
             try
             {
                 var lexerNodes = Lexer.ParseLexerNodes(text);
-                result = ProcessSyntax(lexerNodes);
+                result = ProcessSyntax(text, lexerNodes);
             }
             catch (Exception e)
             {
@@ -49,7 +49,7 @@ namespace CSharpParserGenerator
             return new ParseResult<TResult>(text, success: true, value: result);
         }
 
-        private object ProcessSyntax(IEnumerable<LexerNode<ELang>> lexerNodes)
+        private object ProcessSyntax(string text, IEnumerable<LexerNode<ELang>> lexerNodes)
         {
             object result = null;
             var lexerNodesEnumerator = lexerNodes.GetEnumerator();
@@ -68,7 +68,14 @@ namespace CSharpParserGenerator
                 if (action == null)
                 {
                     var availableTokens = ParserTable.GetAvailableTerminalsFromStateId(currentState).Select(t => t.IsEnd ? "EOF" : t.ToString());
-                    throw new InvalidOperationException($"Syntax error: Invalid value \"{currentNode.Substring}\" at position {currentNode.Position}. Any of these tokens were expected: {string.Join(", ", availableTokens)}");
+                    
+                    if (currentNode.Token.Equals(Token<ELang>.EndToken()))
+                    {
+                        throw new InvalidOperationException($"Syntax error: invalid EOF. Any of these tokens were expected: {string.Join(", ", availableTokens)}");
+                    }
+
+                    var errorTextFragment = Utils.GetErrorTextFragment(text, currentNode.Position, currentNode.Substring.Length);
+                    throw new InvalidOperationException(message: $"Syntax error: Invalid token {currentNode.Token} ({currentNode.Substring}) at \"{errorTextFragment}\" (position {currentNode.Position}). Any of these tokens were expected: {string.Join(", ", availableTokens)}");
                 }
 
                 switch (action.Action)

@@ -39,10 +39,12 @@ namespace CSharpParserGenerator.Test.Parsers.MathExpression
         }
 
         [Theory]
-        [InlineData("3 + 4*5 -2.0", true, 21)]
+        [InlineData("3 3", false, 0)]
+        [InlineData("3 + 4*5 - 2.0", true, 21)]
         [InlineData("3 + 4*5 - ", false, 0)]
         [InlineData("", false, 0)]
         [InlineData("2 ^ ( 2 + 3 )", true, 32)]
+        [InlineData("1234567890 + 1234567890 - - 1234567890 + 1234567890 + 3", false, 0)]
         public void ParserTests(string expression, bool success, int resultValue)
         {
             var parser = CompileParser();

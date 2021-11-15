@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
     <PackageId>CSharpParserGenerator</PackageId>
-  	<Version>1.1.2</Version>
+  	<Version>1.2.0</Version>
     <Authors>Rolando A. Rosales J.</Authors>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
